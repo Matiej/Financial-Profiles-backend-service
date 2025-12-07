@@ -8,6 +8,16 @@ spring:
       port: 27018
       database: reapi_mongo_db
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+app:
+  security:
+    swagger-public: true
+
 logging:
   level:
     root: INFO

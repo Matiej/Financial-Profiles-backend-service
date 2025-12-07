@@ -29,9 +29,19 @@ spring:
       username: profiler_app
       password: ${MONGO_PWD}
       authentication-database: profiler
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
 #  data:
 #    mongodb:
 #      uri: mongodb://profiler_app:${MONGO_PWD}@mongo:27017/profiler?authSource=profiler
+
+app:
+  security:
+    swagger-public: true
 
 logging:
   level:

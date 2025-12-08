@@ -48,7 +48,7 @@ public class UserController {
             summary = "Create calculator user",
             description = "Create user1 with calculator view role",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "List retrieved successful"),
+                    @ApiResponse(responseCode = "201", description = "User created successfully"),
                     @ApiResponse(responseCode = "500", description = "Internal server Error"),
                     @ApiResponse(responseCode = "404", description = "Bad request")
             }
@@ -59,5 +59,61 @@ public class UserController {
             @Valid @RequestBody CalculatorUserDto calculatorUserDto) {
         log.info("Received request: POST '/api/users' to create keycloak calculator user");
         return userService.createCalculatorUser(calculatorUserDto.toRequest());
+    }
+
+    @Operation(
+            summary = "Update user",
+            description = "Update user for given userId ",
+            responses = {
+                    @ApiResponse(responseCode = "202", description = "User updated successfully"),
+                    @ApiResponse(responseCode = "500", description = "Internal server Error"),
+                    @ApiResponse(responseCode = "404", description = "Bad request")
+            }
+    )
+    @PutMapping("/{userId}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    Mono<UserResponse> updateUser(
+            @PathVariable String userId,
+            @Valid @RequestBody CalculatorUserDto calculatorUserDto) {
+        log.info("Received request: PUT '/api/users/{userId}' to update user for given id:{}", userId);
+        return userService.updateUser(userId, calculatorUserDto.toRequest())
+                .map(UserResponse::fromDomain);
+    }
+
+    @Operation(
+            summary = "Delete user",
+            description = "Delete user for given userId ",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "User deleted successfully"),
+                    @ApiResponse(responseCode = "500", description = "Internal server Error"),
+                    @ApiResponse(responseCode = "404", description = "Bad request")
+            }
+    )
+    @DeleteMapping("/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    Mono<Void> deleteUser(
+            @PathVariable String userId
+    ) {
+        log.info("Received request: DELETE '/api/users/{userId}' to delete user for given id:{}", userId);
+        return userService.deleteUser(userId);
+    }
+
+    @Operation(
+            summary = "Change user status",
+            description = "Enable/Disable user",
+            responses = {
+                    @ApiResponse(responseCode = "202", description = "User status changed successfully"),
+                    @ApiResponse(responseCode = "500", description = "Internal server Error"),
+                    @ApiResponse(responseCode = "404", description = "Bad request")
+            }
+    )
+    @PutMapping("/{userId}/status")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    Mono<Void> deleteUser(
+            @PathVariable String userId,
+            @RequestParam Boolean status
+    ) {
+        log.info("Received request: PUT '/api/users/{userId}' to change user status to: {} for given id:{}", status.toString(), userId);
+        return userService.changeUserStatus(userId, status);
     }
 }

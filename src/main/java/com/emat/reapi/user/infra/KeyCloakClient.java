@@ -10,9 +10,9 @@ public interface KeyCloakClient {
 
     Flux<KeycloakUserSummary> listCalculatorUsers();
 
-    Mono<KeycloakUserSummary> updateCalculatorUser(String userId, KeycloakUserRequest request);
+    Mono<KeycloakUserSummary> updateUser(String userId, KeycloakUserRequest request);
 
-    Mono<Void> disableCalculatorUser(String userId);
+    Mono<Void> changeUserStatus(String userId, boolean isEnabled);
 
-    Mono<Void> deleteCalculatorUser(String userId);
+    Mono<Void> deleteUser(String userId);
 }

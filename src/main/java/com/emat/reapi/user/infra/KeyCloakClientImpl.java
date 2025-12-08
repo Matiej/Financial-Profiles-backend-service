@@ -162,7 +162,7 @@ class KeyCloakClientImpl implements KeyCloakClient {
     }
 
     @Override
-    public Mono<KeycloakUserSummary> updateCalculatorUser(String userId, KeycloakUserRequest request) {
+    public Mono<KeycloakUserSummary> updateUser(String userId, KeycloakUserRequest request) {
         return tokenProvider.getToken()
                 .flatMap(token ->
                         keycloakAdminWebClient.get()
@@ -176,6 +176,7 @@ class KeyCloakClientImpl implements KeyCloakClient {
                                     ((ObjectNode) existing).put("lastName", request.lastName());
                                     ((ObjectNode) existing).put("email", request.email());
                                     ((ObjectNode) existing).put("enabled", request.enabled());
+                                    ((ObjectNode) existing).put("emailVerified", request.emailVerified());
                                     return keycloakAdminWebClient.put()
                                             .uri("/users/{id}", userId)
                                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -200,7 +201,7 @@ class KeyCloakClientImpl implements KeyCloakClient {
     }
 
     @Override
-    public Mono<Void> disableCalculatorUser(String userId) {
+    public Mono<Void> changeUserStatus(String userId, boolean isEnabled) {
         return tokenProvider.getToken()
                 .flatMap(token ->
                         keycloakAdminWebClient.get()
@@ -209,7 +210,7 @@ class KeyCloakClientImpl implements KeyCloakClient {
                                 .retrieve()
                                 .bodyToMono(JsonNode.class)
                                 .flatMap(existing -> {
-                                    ((ObjectNode) existing).put("enabled", false);
+                                    ((ObjectNode) existing).put("enabled", isEnabled);
                                     return keycloakAdminWebClient.put()
                                             .uri("/users/{id}", userId)
                                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -222,7 +223,7 @@ class KeyCloakClientImpl implements KeyCloakClient {
     }
 
     @Override
-    public Mono<Void> deleteCalculatorUser(String userId) {
+    public Mono<Void> deleteUser(String userId) {
         return tokenProvider.getToken()
                 .flatMap(token ->
                         keycloakAdminWebClient.delete()

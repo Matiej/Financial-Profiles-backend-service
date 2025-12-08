@@ -9,5 +9,7 @@ import reactor.core.publisher.Mono;
 public interface UserService {
     Flux<KeycloakUser> getAllCalculatorUsers();
     Mono<String> createCalculatorUser(KeycloakUserRequest request);
-    Mono<KeycloakUser> updateCalculatorUser(CalculatorUserDto calculatorUserDto);
+    Mono<KeycloakUser> updateUser(String userId, KeycloakUserRequest request);
+    Mono<Void> deleteUser(String userId);
+    Mono<Void> changeUserStatus(String userId, boolean isEnabled);
 }

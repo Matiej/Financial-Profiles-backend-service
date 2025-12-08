@@ -16,27 +16,27 @@ public class OpenApiConfiguration {
     @Value("${app.security.swagger-token}")
     private String tokenUrl;
 
-    SecurityScheme securityScheme = new SecurityScheme()
-            .type(SecurityScheme.Type.OAUTH2)
-            .description("""
-                    Kaycloak logging (password flow).
-                    Enter:
-                    • username / password (eg tech.admin)
-                    • swagger uses client_id/client_secret from configuration
-                    and retrieves access_token, then will use as Bearer JWT.
-                    """)
-            .flows(new OAuthFlows()
-                    .password(new OAuthFlow()
-                            .tokenUrl(tokenUrl)
-                            .scopes(new Scopes()
-                                    .addString("openid", "OpenID scope")
-                                    .addString("profile", "Profil użytkownika")
-                            )
-                    )
-            );
-
     @Bean
     public OpenAPI apiInfo() {
+        SecurityScheme securityScheme = new SecurityScheme()
+                .type(SecurityScheme.Type.OAUTH2)
+                .description("""
+                        Keycloak logging (password flow).
+                        Enter:
+                        • username / password (eg tech.admin)
+                        • swagger uses client_id/client_secret from configuration
+                        and retrieves access_token, then will use as Bearer JWT.
+                        """)
+                .flows(new OAuthFlows()
+                        .password(new OAuthFlow()
+                                .tokenUrl(tokenUrl)
+                                .scopes(new Scopes()
+                                        .addString("openid", "OpenID scope")
+                                        .addString("profile", "Profil użytkownika")
+                                )
+                        )
+                );
+
         return new OpenAPI()
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components()

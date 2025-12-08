@@ -1,11 +1,11 @@
 package com.emat.reapi.migrations.v001collectionsinit;
 
+import com.emat.reapi.clienttalytest.infra.ClientAnswerDocument;
 import com.emat.reapi.migrations.CollectionInitializer;
 import com.emat.reapi.ncalculator.infra.NumerologyDateCalculatorDocument;
 import com.emat.reapi.ncalculator.infra.NumerologyPhaseCalculatorDocument;
 import com.emat.reapi.profileanalysis.infra.InsightReportDocument;
 import com.emat.reapi.profileanalysis.infra.ReportJobDocument;
-import com.emat.reapi.clienttalytest.infra.ClientAnswerDocument;
 import com.emat.reapi.statement.infra.StatementDefinitionDocument;
 import io.mongock.api.annotations.*;
 import lombok.AllArgsConstructor;

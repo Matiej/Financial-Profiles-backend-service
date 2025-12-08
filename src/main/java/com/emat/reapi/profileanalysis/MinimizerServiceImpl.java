@@ -2,8 +2,10 @@ package com.emat.reapi.profileanalysis;
 
 import com.emat.reapi.profileanalysis.domain.ClientCategoryPayload;
 import com.emat.reapi.profileanalysis.domain.MinimizedPayload;
-import com.emat.reapi.profiler.domain.*;
 import com.emat.reapi.profileanalysis.domain.PayloadMode;
+import com.emat.reapi.profiler.domain.ProfiledCategoryClientStatements;
+import com.emat.reapi.profiler.domain.ProfiledClientAnswerDetails;
+import com.emat.reapi.profiler.domain.ProfiledStatement;
 import com.emat.reapi.statement.domain.StatementType;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -6,7 +6,6 @@ import com.emat.reapi.clienttest.domain.ClientTest;
 import com.emat.reapi.clienttest.domain.ClientTestAnswer;
 import com.emat.reapi.clienttest.domain.ClientTestQuestion;
 import com.emat.reapi.clienttest.domain.ClientTestSubmission;
-import com.emat.reapi.clienttest.infra.ClientTestAnswerDocument;
 import com.emat.reapi.clienttest.infra.ClientTestDocument;
 import com.emat.reapi.clienttest.infra.ClientTestRepository;
 import com.emat.reapi.fptest.FpTestService;

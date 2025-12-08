@@ -2,7 +2,6 @@ package com.emat.reapi.clienttest.infra;
 
 
 import com.emat.reapi.clienttest.domain.ClientTestSubmission;
-import com.emat.reapi.statement.domain.StatementDefinition;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +11,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor

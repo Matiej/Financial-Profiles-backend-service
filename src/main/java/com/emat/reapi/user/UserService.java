@@ -1,6 +1,5 @@
 package com.emat.reapi.user;
 
-import com.emat.reapi.api.dto.user.CalculatorUserDto;
 import com.emat.reapi.user.domain.KeycloakUser;
 import com.emat.reapi.user.domain.KeycloakUserRequest;
 import reactor.core.publisher.Flux;

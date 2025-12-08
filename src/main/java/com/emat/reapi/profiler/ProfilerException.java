@@ -1,9 +1,6 @@
 package com.emat.reapi.profiler;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-
-import java.awt.*;
 
 public class ProfilerException  extends RuntimeException{
     private final ProfilerErrorType errorType;

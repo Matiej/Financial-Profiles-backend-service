@@ -1,9 +1,9 @@
 package com.emat.reapi.profileanalysis;
 
 import com.emat.reapi.ai.port.AiInsightAnalyzerService;
-import com.emat.reapi.profiler.domain.ProfiledClientAnswerDetails;
 import com.emat.reapi.profileanalysis.domain.InsightReport;
 import com.emat.reapi.profileanalysis.domain.PayloadMode;
+import com.emat.reapi.profiler.domain.ProfiledClientAnswerDetails;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;

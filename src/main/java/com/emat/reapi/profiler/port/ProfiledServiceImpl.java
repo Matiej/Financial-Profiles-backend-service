@@ -1,11 +1,13 @@
 package com.emat.reapi.profiler.port;
 
+import com.emat.reapi.clienttalytest.ClientAnswerService;
 import com.emat.reapi.clienttalytest.domain.ClientAnswer;
 import com.emat.reapi.clienttalytest.domain.ClientStatement;
-import com.emat.reapi.profiler.domain.*;
 import com.emat.reapi.profileanalysis.infra.InsightReportRepository;
-import com.emat.reapi.statement.domain.*;
-import com.emat.reapi.clienttalytest.ClientAnswerService;
+import com.emat.reapi.profiler.domain.*;
+import com.emat.reapi.statement.domain.Statement;
+import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;

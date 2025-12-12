@@ -110,7 +110,7 @@ class KeyCloakClientImpl implements KeyCloakClient {
                                 )
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(List.of("VERIFY_EMAIL"))
+                                .bodyValue(List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"))
                                 .retrieve()
                                 .bodyToMono(Void.class)
                 );

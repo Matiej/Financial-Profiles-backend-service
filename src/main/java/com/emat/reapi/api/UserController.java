@@ -109,7 +109,7 @@ public class UserController {
     )
     @PutMapping("/{userId}/status")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    Mono<Void> deleteUser(
+    Mono<Void> changeUserState(
             @PathVariable String userId,
             @RequestParam Boolean status
     ) {

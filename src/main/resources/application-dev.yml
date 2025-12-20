@@ -42,6 +42,7 @@ springdoc:
 app:
   security:
     swagger-public: true
+    swagger-url: https://api.lan
 
 logging:
   level:

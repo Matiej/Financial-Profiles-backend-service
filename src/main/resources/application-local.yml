@@ -17,6 +17,7 @@ springdoc:
 app:
   security:
     swagger-public: true
+    swagger-url: http://localhost:8100
 
 logging:
   level:

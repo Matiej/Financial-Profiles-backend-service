@@ -5,9 +5,12 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.*;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class OpenApiConfiguration {
@@ -15,6 +18,8 @@ public class OpenApiConfiguration {
 
     @Value("${app.security.swagger-token}")
     private String tokenUrl;
+    @Value("${app.security.swagger-url}")
+    private String swaggerUrl;
 
     @Bean
     public OpenAPI apiInfo() {
@@ -38,6 +43,7 @@ public class OpenApiConfiguration {
                 );
 
         return new OpenAPI()
+                .servers(List.of(new Server().url(swaggerUrl)))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(new Components()
                         .addSecuritySchemes(SECURITY_SCHEME_NAME, securityScheme)

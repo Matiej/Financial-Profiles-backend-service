@@ -1,7 +1,7 @@
 package com.emat.reapi.api.tally;
 
-import com.emat.reapi.tally.TallyService;
-import com.emat.reapi.tally.TallySignatureVerifier;
+import com.emat.reapi.clienttalytest.tally.TallyService;
+import com.emat.reapi.clienttalytest.tally.TallySignatureVerifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

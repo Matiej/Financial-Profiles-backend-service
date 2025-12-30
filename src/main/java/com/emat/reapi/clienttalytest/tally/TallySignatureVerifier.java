@@ -1,4 +1,4 @@
-package com.emat.reapi.tally;
+package com.emat.reapi.clienttalytest.tally;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

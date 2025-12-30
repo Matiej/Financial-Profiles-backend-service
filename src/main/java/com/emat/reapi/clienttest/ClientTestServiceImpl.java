@@ -10,6 +10,8 @@ import com.emat.reapi.clienttest.infra.ClientTestDocument;
 import com.emat.reapi.clienttest.infra.ClientTestRepository;
 import com.emat.reapi.fptest.FpTestService;
 import com.emat.reapi.fptest.domain.FpTest;
+import com.emat.reapi.infrastructure.n8n.ClientScoreTestNotification;
+import com.emat.reapi.infrastructure.n8n.N8nService;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.domain.StatementType;
 import com.emat.reapi.statement.domain.StatementTypeDefinition;
@@ -40,6 +42,7 @@ public class ClientTestServiceImpl implements ClientTestService {
     private final FpTestService fpTestService;
     private final StatementDefinitionService statementDefinitionService;
     private final ClientTestRepository clientTestRepository;
+    private final N8nService n8nService;
 
     @Override
     public Mono<ClientTest> getClientTestByToken(String publicToken) {
@@ -86,8 +89,8 @@ public class ClientTestServiceImpl implements ClientTestService {
     @Override
     public Mono<Void> saveClientTest(ClientTestSubmissionDto request) {
         return submissionService.findBySubmissionId(request.submissionId())
-                .flatMap(sub -> {
-                    if (!sub.publicToken().equals(request.publicToken())) {
+                .flatMap(submission -> {
+                    if (!submission.publicToken().equals(request.publicToken())) {
                         return Mono.error(new ClientTestException(
                                 "Public token does not match submission",
                                 HttpStatus.BAD_REQUEST
@@ -96,7 +99,12 @@ public class ClientTestServiceImpl implements ClientTestService {
                     Mono<List<StatementDefinition>> monoDef = statementDefinitionService.getAllStatementDefinitions()
                             .collectList()
                             .flatMap(definitions -> validateQuestions(request.clientTestAnswers(), definitions).thenReturn(definitions));
-                    return Mono.zip(Mono.just(sub), fpTestService.getFpTesByTestId(sub.testId()), monoDef);
+                    Mono<FpTest> fpTestMono = fpTestService.getFpTesByTestId(submission.testId())
+                            .switchIfEmpty(Mono.error(new ClientTestException(
+                                    "Test definition missing for testId=" + submission.testId(),
+                                    HttpStatus.NOT_FOUND
+                            )));
+                    return Mono.zip(Mono.just(submission), fpTestMono, monoDef);
                 }).flatMap((both) -> {
                     Submission submission = both.getT1();
                     FpTest fpTest = both.getT2();
@@ -105,8 +113,6 @@ public class ClientTestServiceImpl implements ClientTestService {
                     if (fpTest.fpTestStatements().size() != request.clientTestAnswers().size()) {
                         return Mono.error(new ClientTestException("Number of client test are different than in submitted test", HttpStatus.BAD_REQUEST));
                     }
-
-
                     String testSubmissionPublicId = "tsb_" + UUID.randomUUID();
                     ClientTestSubmission clientTestSubmission = new ClientTestSubmission(
                             testSubmissionPublicId,
@@ -135,7 +141,15 @@ public class ClientTestServiceImpl implements ClientTestService {
                                             err);
                                 }
                             })
-                            .then(submissionService.closeSubmission(submission.submissionId()));
+                            .flatMap(saved ->
+                                    n8nService.sendScoringTestNotification(saved.toDomain())
+                                            .timeout(java.time.Duration.ofSeconds(3))
+                                            .doOnError(e -> log.warn("n8n notification failed, ignoring", e))
+                                            .onErrorResume(e -> Mono.empty())
+                                            .thenReturn(saved)
+                            )
+                            .flatMap(saved -> submissionService.closeSubmission(submission.submissionId()))
+                            .then();
                 }).doOnError(ex -> log.error("Error saving client test answers"))
                 .doOnSuccess(suc -> log.info("Saved '{}' client answers for submission '{}'",
                         request.clientTestAnswers().size(),
@@ -162,7 +176,6 @@ public class ClientTestServiceImpl implements ClientTestService {
                             answerDto.scoring()
                     );
                 }).toList();
-
     }
 
     private String mapToDefinition(List<StatementTypeDefinition> statementTypeDefinitions, StatementType type) {

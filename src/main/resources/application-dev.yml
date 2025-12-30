@@ -43,7 +43,9 @@ app:
   security:
     swagger-public: true
     swagger-url: https://api.lan
-
+  client:
+    n8n:
+      base-url: "localhost:8081/"
 logging:
   level:
     root: INFO

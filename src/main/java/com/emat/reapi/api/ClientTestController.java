@@ -36,7 +36,7 @@ public class ClientTestController {
     public Mono<Void> saveTest(
             @Valid @RequestBody ClientTestSubmissionDto request
     ) {
-        log.info("Received request: POST '/api/pftest' to retrieve all tests");
+        log.info("Received request: POST '/api/pftest' to retrieve save client tests");
         return clientTestService.saveClientTest(request);
 
     }

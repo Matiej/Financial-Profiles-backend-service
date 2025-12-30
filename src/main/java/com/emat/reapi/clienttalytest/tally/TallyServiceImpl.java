@@ -1,4 +1,4 @@
-package com.emat.reapi.tally;
+package com.emat.reapi.clienttalytest.tally;
 
 import com.emat.reapi.api.dto.ClientAnswerDto;
 import com.emat.reapi.api.tally.TallyWebhookEvent;

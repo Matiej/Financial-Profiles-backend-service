@@ -18,6 +18,9 @@ app:
   security:
     swagger-public: true
     swagger-url: http://localhost:8100
+  client:
+    n8n:
+      base-url:  "http://192.168.50.34:5678/webhook-test"
 
 logging:
   level:

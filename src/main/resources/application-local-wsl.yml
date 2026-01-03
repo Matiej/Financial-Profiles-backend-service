@@ -1,0 +1,29 @@
+spring:
+  config:
+    import: file:/home/matiej/projects/CONFIG/profiler/profiler-application.yml
+
+  data:
+    mongodb:
+      host: localhost
+      port: 27018
+      database: reapi_mongo_db
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+app:
+  security:
+    swagger-public: true
+    swagger-url: http://localhost:8100
+  client:
+    n8n:
+      base-url:  "http://192.168.50.34:5678/webhook-test"
+
+logging:
+  level:
+    root: INFO
+    com.emat.reapi.ai.configuration: DEBUG
+    org.springframework.web.reactive.function.client: TRACE

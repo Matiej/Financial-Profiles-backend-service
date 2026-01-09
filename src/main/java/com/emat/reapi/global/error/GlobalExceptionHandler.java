@@ -5,7 +5,7 @@ import com.emat.reapi.fptest.FpTestStateException;
 import com.emat.reapi.profiler.ProfilerException;
 import com.emat.reapi.submission.SubmissionException;
 import com.emat.reapi.submission.SubmissionStateException;
-import com.emat.reapi.user.KeycloakException;
+import com.emat.reapi.infrastructure.keycloak.KeycloakException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

@@ -1,6 +1,5 @@
-package com.emat.reapi.user.infra;
+package com.emat.reapi.infrastructure.keycloak;
 
-import com.emat.reapi.user.domain.KeycloakUserRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

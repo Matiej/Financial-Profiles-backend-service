@@ -1,8 +1,5 @@
-package com.emat.reapi.user.infra;
+package com.emat.reapi.infrastructure.keycloak;
 
-import com.emat.reapi.user.KeycloakException;
-import com.emat.reapi.user.domain.KeycloakUserRequest;
-import com.emat.reapi.user.keycloakconfing.KeycloakAdminProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;

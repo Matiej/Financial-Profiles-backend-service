@@ -1,4 +1,4 @@
-package com.emat.reapi.user.keycloakconfing;
+package com.emat.reapi.infrastructure.keycloak;
 
 
 import org.springframework.boot.context.properties.ConfigurationProperties;

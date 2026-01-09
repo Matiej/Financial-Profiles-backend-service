@@ -58,7 +58,7 @@ public class UserController {
     Mono<String> createCalculatorUser(
             @Valid @RequestBody CalculatorUserDto calculatorUserDto) {
         log.info("Received request: POST '/api/users' to create keycloak calculator user");
-        return userService.createCalculatorUser(calculatorUserDto.toRequest());
+        return userService.createCalculatorUser(calculatorUserDto.toCreateUserRequest());
     }
 
     @Operation(
@@ -76,7 +76,7 @@ public class UserController {
             @PathVariable String userId,
             @Valid @RequestBody CalculatorUserDto calculatorUserDto) {
         log.info("Received request: PUT '/api/users/{userId}' to update user for given id:{}", userId);
-        return userService.updateUser(userId, calculatorUserDto.toRequest())
+        return userService.updateUser(userId, calculatorUserDto.toCreateUserRequest())
                 .map(UserResponse::fromDomain);
     }
 

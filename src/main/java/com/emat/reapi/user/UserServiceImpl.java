@@ -1,9 +1,9 @@
 package com.emat.reapi.user;
 
-import com.emat.reapi.user.domain.KeycloakUser;
-import com.emat.reapi.user.domain.KeycloakUserRequest;
-import com.emat.reapi.user.infra.KeyCloakClient;
-import com.emat.reapi.user.infra.KeycloakUserSummary;
+import com.emat.reapi.infrastructure.keycloak.KeyCloakClient;
+import com.emat.reapi.infrastructure.keycloak.KeycloakUserSummary;
+import com.emat.reapi.user.domain.CreateUserRequest;
+import com.emat.reapi.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,22 +17,24 @@ public class UserServiceImpl implements UserService {
     private final KeyCloakClient keyCloakClient;
 
     @Override
-    public Flux<KeycloakUser> getAllCalculatorUsers() {
+    public Flux<User> getAllCalculatorUsers() {
         return keyCloakClient.listCalculatorUsers()
                 .map(KeycloakUserSummary::toDomain)
+                .map(User::fromKeycloak)
                 .doOnError(err -> log.warn("Error fetched calculator users"));
     }
 
     @Override
-    public Mono<String> createCalculatorUser(KeycloakUserRequest request) {
-        return keyCloakClient.createCalculatorUser(request)
+    public Mono<String> createCalculatorUser(CreateUserRequest request) {
+        return keyCloakClient.createCalculatorUser(request.toKeycloakRequest())
                 .doOnSuccess(suc -> log.info("User {}, created successfully", request.username()));
     }
 
     @Override
-    public Mono<KeycloakUser> updateUser(String userId, KeycloakUserRequest request) {
-        return keyCloakClient.updateUser(userId, request)
+    public Mono<User> updateUser(String userId, CreateUserRequest request) {
+        return keyCloakClient.updateUser(userId, request.toKeycloakRequest())
                 .map(KeycloakUserSummary::toDomain)
+                .map(User::fromKeycloak)
                 .doOnSuccess(suc -> log.info("User id: '{}' has been updated successfully", userId));
     }
 

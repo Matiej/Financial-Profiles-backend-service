@@ -1,6 +1,6 @@
 package com.emat.reapi.api.dto.user;
 
-import com.emat.reapi.user.domain.KeycloakUserRequest;
+import com.emat.reapi.user.domain.CreateUserRequest;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -27,14 +27,14 @@ public record CalculatorUserDto(
         Boolean emailVerified
 ) {
 
-    public KeycloakUserRequest toRequest() {
-        return new KeycloakUserRequest(
+    public CreateUserRequest toCreateUserRequest() {
+        return new CreateUserRequest(
                 this.username,
                 this.firstName,
                 this.lastName,
                 this.email,
-                this.enabled,
-                this.emailVerified
+                this.enabled != null ? this.enabled : true,
+                this.emailVerified != null ? this.emailVerified : false
         );
     }
 }

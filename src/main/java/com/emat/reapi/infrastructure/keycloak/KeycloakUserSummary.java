@@ -1,6 +1,4 @@
-package com.emat.reapi.user.infra;
-
-import com.emat.reapi.user.domain.KeycloakUser;
+package com.emat.reapi.infrastructure.keycloak;
 
 import java.time.Instant;
 

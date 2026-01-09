@@ -1,6 +1,6 @@
 package com.emat.reapi.api.dto.user;
 
-import com.emat.reapi.user.domain.KeycloakUser;
+import com.emat.reapi.user.domain.User;
 
 import java.time.Instant;
 
@@ -14,16 +14,16 @@ public record UserResponse(
         boolean emailVerified,
         Instant createdAt
 ) {
-    public static UserResponse fromDomain(KeycloakUser keycloakUser) {
+    public static UserResponse fromDomain(User user) {
         return new UserResponse(
-                keycloakUser.id(),
-                keycloakUser.username(),
-                keycloakUser.firstName(),
-                keycloakUser.lastName(),
-                keycloakUser.email(),
-                keycloakUser.enabled(),
-                keycloakUser.emailVerified(),
-                keycloakUser.createdAt()
+                user.id(),
+                user.username(),
+                user.firstName(),
+                user.lastName(),
+                user.email(),
+                user.enabled(),
+                user.emailVerified(),
+                user.createdAt()
         );
     }
 }

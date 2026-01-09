@@ -1,4 +1,4 @@
-package com.emat.reapi.user;
+package com.emat.reapi.infrastructure.keycloak;
 
 import org.springframework.http.HttpStatus;
 

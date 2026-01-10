@@ -74,7 +74,7 @@ class KeyCloakClientImpl implements KeyCloakClient {
                 )
                 .flatMap(userId ->
                         assignCalculatorRole(userId)
-                                .then(sendVerifyEmail(userId))
+                                .then(sendUserActionsEmail(userId, List.of("VERIFY_EMAIL", "UPDATE_PASSWORD")))
                                 .thenReturn(userId)
                 );
     }
@@ -96,7 +96,8 @@ class KeyCloakClientImpl implements KeyCloakClient {
                 );
     }
 
-    private Mono<Void> sendVerifyEmail(String userId) {
+    @Override
+    public Mono<Void> sendUserActionsEmail(String userId, List<String> actions) {
         return tokenProvider.getToken()
                 .flatMap(token ->
                         keycloakAdminWebClient.put()
@@ -107,9 +108,45 @@ class KeyCloakClientImpl implements KeyCloakClient {
                                 )
                                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .bodyValue(List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"))
+                                .bodyValue(actions)
                                 .retrieve()
                                 .bodyToMono(Void.class)
+                );
+    }
+
+    @Override
+    public Mono<KeycloakUserSummary> getUserById(String userId) {
+        return tokenProvider.getToken()
+                .flatMap(token ->
+                        keycloakAdminWebClient.get()
+                                .uri("/users/{id}", userId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                .retrieve()
+                                .onStatus(
+                                        HttpStatusCode::isError,
+                                        response -> response.bodyToMono(String.class)
+                                                .defaultIfEmpty("")
+                                                .flatMap(body -> {
+                                                    HttpStatus status = (HttpStatus) response.statusCode();
+                                                    log.error("Keycloak getUserById error. Status: {}, body: {}", status.value(), body);
+                                                    return Mono.error(new KeycloakException(
+                                                            "Error fetching user from Keycloak. HTTP status: " + status.value(),
+                                                            KeycloakException.KeyCloakExceptionErrorType.GENERIC_ERROR,
+                                                            status
+                                                    ));
+                                                })
+                                )
+                                .bodyToMono(JsonNode.class)
+                                .map(node -> new KeycloakUserSummary(
+                                        node.get("id").asText(),
+                                        node.get("username").asText(),
+                                        node.path("firstName").asText(null),
+                                        node.path("lastName").asText(null),
+                                        node.hasNonNull("email") ? node.get("email").asText() : null,
+                                        node.get("enabled").asBoolean(),
+                                        node.get("emailVerified").asBoolean(),
+                                        Instant.ofEpochMilli(node.get("createdTimestamp").asLong())
+                                ))
                 );
     }
 

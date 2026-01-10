@@ -57,6 +57,9 @@ public class SecurityConfiguration {
                             }
                             spec.pathMatchers("/api/ncalculator/**")
                                     .hasAnyRole("BUSINESS_ADMIN", "TECH_ADMIN", "CALCULATOR_USER");
+                            // account self-service for all authenticated users
+                            spec.pathMatchers("/api/account/**")
+                                    .hasAnyRole("BUSINESS_ADMIN", "TECH_ADMIN", "CALCULATOR_USER");
                             // rest api for business and tech
                             spec.pathMatchers("/api/**")
                                     .hasAnyRole("BUSINESS_ADMIN", "TECH_ADMIN");

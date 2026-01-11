@@ -224,13 +224,21 @@ class KeyCloakClientImpl implements KeyCloakClient {
                         (
                                 node.get("id").asText(),
                                 node.get("username").asText(),
-                                node.get("firstName").asText(),
-                                node.get("lastName").asText(),
+                                node.path("firstName").asText(),
+                                node.path("lastName").asText(),
                                 node.hasNonNull("email") ? node.get("email").asText() : null,
-                                node.get("enabled").asBoolean(),
-                                node.get("emailVerified").asBoolean(),
+                                node.path("enabled").asBoolean(),
+                                node.path("emailVerified").asBoolean(),
                                 Instant.ofEpochMilli(node.get("createdTimestamp").asLong())
                         )
+                ).flatMap(user -> {
+                            if (!request.emailVerified()) {
+                                return sendUserActionsEmail(user.id(), List.of("VERIFY_EMAIL"))
+                                        .thenReturn(user);
+                            } else {
+                                return Mono.just(user);
+                            }
+                        }
                 );
     }
 

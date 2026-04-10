@@ -34,3 +34,8 @@ build/
 ### VS Code ###
 .vscode/
 /src/main/java/com/emat/reapi/xycourse
+
+### Local infra / secrets ###
+infra-backend/
+.env
+docker-compose.yml

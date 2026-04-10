@@ -1,26 +1,7 @@
 spring:
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: health,info,logfile
-    endpoint:
-      logfile:
-        enabled: true
-      health:
-        probes:
-          enabled: true
-        show-details: never
-  logging:
-    file:
-      name: /app/logs/profiler-backend.log
-    level:
-      root: INFO
-      org.springframework.web.reactive.function.client: WARN
   config:
     import: optional:file:/config/profiler-application.yml
-#    in docker, mounted from server file path in opt/
-
+  # in docker, mounted from server file path in opt/
   data:
     mongodb:
       host: mongo
@@ -29,6 +10,19 @@ spring:
       username: profiler_app
       password: ${MONGO_PWD}
       authentication-database: profiler
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,logfile
+  endpoint:
+    logfile:
+      enabled: true
+    health:
+      probes:
+        enabled: true
+      show-details: never
 
 springdoc:
   api-docs:
@@ -41,7 +35,9 @@ app:
     swagger-public: false
 
 logging:
+  file:
+    name: /app/logs/profiler-backend.log
   level:
     root: INFO
     com.emat.reapi.ai.configuration: DEBUG
-    org.springframework.web.reactive.function.client: TRACE
+    org.springframework.web.reactive.function.client: WARN

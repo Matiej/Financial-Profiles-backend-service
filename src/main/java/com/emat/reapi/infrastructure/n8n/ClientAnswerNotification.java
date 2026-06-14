@@ -1,11 +1,11 @@
 package com.emat.reapi.infrastructure.n8n;
 
 import com.emat.reapi.clienttest.domain.ClientTestAnswer;
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 
 public record ClientAnswerNotification(
         String questionKey,
-        StatementCategory category,
+        StatementProfile category,
         String limitingDescription,
         String supportingDescription,
         int scoring

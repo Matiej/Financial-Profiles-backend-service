@@ -18,6 +18,6 @@ public class ScoringProfiledClientDetails {
     private String testName;
     private Instant clientTestDate;
     private ScoringOverallSummary overallSummary;
-    private List<ScoringCategoryBlock> categories;
+    private List<ScoringProfileBlock> profiles;
 
 }

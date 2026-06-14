@@ -45,19 +45,19 @@ public final class StatementMapper {
         );
     }
 
+    @Deprecated
     private static List<Statement> toStatements(List<StatementTypeDefinition> statementDefinitions,
                                                 List<StatementDto> dto) {
         return statementDefinitions.stream()
                 .map(def -> new Statement(
-                        def.getKey(),
+                        def.getStatementType().name(),
                         def.getStatementDescription(),
                         def.getStatementType(),
-                        dto.stream().//TODO refactor this shit.
-                                filter(p -> p.statementKey().equalsIgnoreCase(def.getKey()))
+                        dto.stream()
+                                .filter(p -> p.statementKey().equalsIgnoreCase(def.getStatementType().name()))
                                 .map(StatementDto::status)
                                 .findAny()
                                 .orElse(Boolean.FALSE)
-
                 )).toList();
     }
 }

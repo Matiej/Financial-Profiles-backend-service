@@ -1,7 +1,7 @@
 package com.emat.reapi.clienttalytest.domain;
 
 import com.emat.reapi.statement.domain.Statement;
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,5 +13,5 @@ public class ClientStatement {
     private String statementId;
     private String key;
     private List<Statement> statementList;
-    private StatementCategory statementCategory;
+    private StatementProfile statementCategory;
 }

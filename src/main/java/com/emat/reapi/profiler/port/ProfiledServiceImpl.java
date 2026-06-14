@@ -6,7 +6,7 @@ import com.emat.reapi.clienttalytest.domain.ClientStatement;
 import com.emat.reapi.profileanalysis.infra.InsightReportRepository;
 import com.emat.reapi.profiler.domain.*;
 import com.emat.reapi.statement.domain.Statement;
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import com.emat.reapi.statement.domain.StatementType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,18 +101,18 @@ class ProfiledServiceImpl implements ProfiledService {
     }
 
     private List<ProfiledCategoryClientStatements> mapToProfiledCategoryClientStatements(List<ClientStatement> clientStatements) {
-        Map<StatementCategory, List<Statement>> byCategory = clientStatements.stream()
+        Map<StatementProfile, List<Statement>> byCategory = clientStatements.stream()
                 .collect(Collectors.groupingBy(
                         ClientStatement::getStatementCategory,
                         Collectors.flatMapping(cs -> cs.getStatementList().stream(), Collectors.toList())
                 ));
 
-        return Stream.of(StatementCategory.values())
+        return Stream.of(StatementProfile.values())
                 .map(cat -> buildCategoryBlock(cat, byCategory.getOrDefault(cat, List.of())))
                 .toList();
     }
 
-    private ProfiledCategoryClientStatements buildCategoryBlock(StatementCategory cat, List<Statement> statements) {
+    private ProfiledCategoryClientStatements buildCategoryBlock(StatementProfile cat, List<Statement> statements) {
         int limiting = ProfiledCategoryClientStatements.countTypes(StatementType.LIMITING, statements);
         int supporting = ProfiledCategoryClientStatements.countTypes(StatementType.SUPPORTING, statements);
 

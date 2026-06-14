@@ -12,6 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Deprecated
 public final class TallyToDtoMapper {
     private TallyToDtoMapper() {
     }
@@ -55,7 +56,7 @@ public final class TallyToDtoMapper {
             AnsweredStatementDto answered = resultMap.computeIfAbsent(key, k -> {
                 List<StatementDto> allOptions = def.getStatementTypeDefinitions().stream()
                         .map(opt -> new StatementDto(
-                                opt.getKey(),
+                                opt.getStatementType().name(),
                                 opt.getStatementDescription(),
                                 null // status uzupełnimy poniżej
                         ))
@@ -64,13 +65,6 @@ public final class TallyToDtoMapper {
             });
 
             Set<String> selectedSet = new HashSet<>(selectedIds);
-            for (String sel : selectedSet) {
-                boolean known = def.getStatementTypeDefinitions().stream()
-                        .anyMatch(opt -> Objects.equals(opt.getKey(), sel));
-                if (!known) {
-                    log.warn("Selected optionId {} not present in definition for key {}", sel, key);
-                }
-            }
 
             List<StatementDto> updated = answered.getStatementDtoList().stream()
                     .map(s -> new StatementDto(

@@ -1,7 +1,7 @@
 package com.emat.reapi.api.dto;
 
 
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.domain.StatementTypeDefinition;
 
@@ -9,7 +9,7 @@ import java.util.List;
 
 public record StatementDefinitionDto(
         String statementId,
-        StatementCategory category,
+        StatementProfile category,
         String statementKey,
         List<StatementTypeDefinition> statementTypeDefinitions
 ) {

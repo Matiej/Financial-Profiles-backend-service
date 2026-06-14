@@ -1,6 +1,6 @@
 package com.emat.reapi.statement.infra;
 
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.domain.StatementTypeDefinition;
 import lombok.AllArgsConstructor;
@@ -27,10 +27,10 @@ public class StatementDefinitionDocument {
     private String statementId;
     @Indexed(name = "statementKey_idx", background = true, unique = true)
     private String statementKey;
-    private StatementCategory category;
+    private StatementProfile category;
     private List<StatementTypeDefinition> statementTypeDefinitions;
 
-    public StatementDefinitionDocument(String statementId, String statementKey, StatementCategory category, List<StatementTypeDefinition> statementTypeDefinitions) {
+    public StatementDefinitionDocument(String statementId, String statementKey, StatementProfile category, List<StatementTypeDefinition> statementTypeDefinitions) {
         this.statementId = statementId;
         this.statementKey = statementKey;
         this.category = category;

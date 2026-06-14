@@ -17,6 +17,7 @@ import java.util.Map;
 @RequestMapping("/webhooks/tally")
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated
 public class TallyWebhookController {
     private final TallySignatureVerifier verifier;
     private final ObjectMapper objectMapper;

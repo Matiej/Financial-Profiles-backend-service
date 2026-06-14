@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 public class StatementDefinition {
     private String statementId;
-    private StatementCategory category;
+    private StatementProfile category;
     private String statementKey;
     private List<StatementTypeDefinition> statementTypeDefinitions;
 }

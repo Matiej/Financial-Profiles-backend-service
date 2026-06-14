@@ -33,6 +33,8 @@ springdoc:
 app:
   security:
     swagger-public: false
+    swagger-token: "n/a"
+    swagger-url: "n/a"
 
 logging:
   file:

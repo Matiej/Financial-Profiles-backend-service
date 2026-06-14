@@ -12,10 +12,24 @@ mongock:
   migration-scan-package:
     - com.emat.reapi.migrations
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,logfile
+  endpoint:
+    logfile:
+      enabled: true
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
 logging:
   level:
     root: INFO
     org.springframework.web.reactive.function.client: WARN
+    com.emat.reapi.ai.configuration: DEBUG
 
 springdoc:
   swagger-ui.path: /docs

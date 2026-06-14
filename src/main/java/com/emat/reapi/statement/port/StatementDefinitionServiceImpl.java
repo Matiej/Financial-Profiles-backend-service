@@ -1,6 +1,6 @@
 package com.emat.reapi.statement.port;
 
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.infra.StatementDefinitionDocument;
 import com.emat.reapi.statement.infra.StatementDefinitionRepository;
@@ -32,7 +32,7 @@ public class StatementDefinitionServiceImpl implements StatementDefinitionServic
     }
 
     @Override
-    public Flux<StatementDefinition> getStatementDefinitionsByCategory(StatementCategory category) {
+    public Flux<StatementDefinition> getStatementDefinitionsByCategory(StatementProfile category) {
         log.info("Retrieving all fistStatement definitions for category: {}", category);
         return statementDefinitionRepository.findAllByCategoryOrderByStatementIdAsc(category)
                 .map(StatementDefinitionDocument::toDomain);

@@ -10,6 +10,7 @@ import java.security.MessageDigest;
 import java.util.Base64;
 
 @Component
+@Deprecated
 public class TallySignatureVerifier {
     private final String signingSecret;
 

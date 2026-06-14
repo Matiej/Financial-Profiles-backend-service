@@ -1,7 +1,7 @@
 package com.emat.reapi.api;
 
 import com.emat.reapi.api.dto.StatementDefinitionDto;
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.port.StatementDefinitionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -65,7 +65,7 @@ public class StatementDefinitionController {
     @GetMapping(value = "/category", params = "category")
     public Flux<StatementDefinitionDto> getStatementsByCategory(
             @Parameter(description = "Category to filter definitions")
-            @RequestParam StatementCategory category
+            @RequestParam StatementProfile category
     ) {
         log.info("received request: GET /api/statement/statements with 'category': {}", category);
         return statementService.getStatementDefinitionsByCategory(category)

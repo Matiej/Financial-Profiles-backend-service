@@ -1,11 +1,11 @@
 package com.emat.reapi.clienttest.domain;
 
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 
 public record ClientTestQuestion(
         String id,
         String statementKey,
-        StatementCategory statementCategory,
+        StatementProfile statementCategory,
         String supportingStatement,
         String limitingStatement
         ) {

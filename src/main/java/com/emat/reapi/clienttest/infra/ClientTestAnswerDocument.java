@@ -1,7 +1,7 @@
 package com.emat.reapi.clienttest.infra;
 
 import com.emat.reapi.clienttest.domain.ClientTestAnswer;
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ClientTestAnswerDocument {
     private String questionKey;
-    private StatementCategory category;
+    private StatementProfile category;
     private String limitingDescription;
     private String supportingDescription;
     private int scoring;

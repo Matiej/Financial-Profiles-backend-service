@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 @Service
 @Slf4j
 @AllArgsConstructor
+@Deprecated
 public class TallyServiceImpl implements TallyService {
     private final ClientAnswerService clientAnswerService;
     private final StatementDefinitionService definitionService;

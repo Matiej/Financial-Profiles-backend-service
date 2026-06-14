@@ -4,7 +4,7 @@ import com.emat.reapi.clienttest.ClientTestSubmissionService;
 import com.emat.reapi.clienttest.domain.ClientTestAnswer;
 import com.emat.reapi.clienttest.domain.ClientTestSubmission;
 import com.emat.reapi.profiler.domain.*;
-import com.emat.reapi.statement.domain.StatementCategory;
+import com.emat.reapi.statement.domain.StatementProfile;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -38,21 +38,20 @@ public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestServic
     @Override
     public Flux<ScoringProfiledShort> getScoringShortProfiles() {
         log.info("Retrieving all ScoringProfiledClientShort s.");
-        log.info("Ret");
         return clientTestSubmissionService.findAll()
                 .map(this::mapToScoringProfilerShort);
     }
 
     private ScoringProfiledClientDetails mapToProfile(ClientTestSubmission clientTestSubmission) {
-        Map<StatementCategory, List<ClientTestAnswer>> byCategory =
+        Map<StatementProfile, List<ClientTestAnswer>> byProfile =
                 clientTestSubmission.getClientTestAnswerList().stream()
                         .collect(Collectors.groupingBy(ClientTestAnswer::category));
 
         ScoringOverallSummary overall = buildOverallSummary(clientTestSubmission.getClientTestAnswerList());
 
-        List<ScoringCategoryBlock> categories = byCategory.entrySet().stream()
-                .map(entry -> buildCategoryBlock(entry.getKey(), entry.getValue()))
-                .sorted(Comparator.comparingInt(ScoringCategoryBlock::getTotalScore)) // rosnąco
+        List<ScoringProfileBlock> profiles = byProfile.entrySet().stream()
+                .map(entry -> buildProfileBlock(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparingInt(ScoringProfileBlock::getTotalScore))
                 .toList();
 
         return new ScoringProfiledClientDetails(
@@ -65,7 +64,7 @@ public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestServic
                 clientTestSubmission.getTestName(),
                 clientTestSubmission.getCreatedAt(),
                 overall,
-                categories
+                profiles
         );
     }
 
@@ -80,25 +79,15 @@ public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestServic
                 .mapToInt(ClientTestAnswer::scoring)
                 .sum();
 
-        return new ScoringOverallSummary(
-                answers.size(),
-                totalScore,
-                buckets
-        );
+        return new ScoringOverallSummary(answers.size(), totalScore, buckets);
     }
 
-    private ScoringCategoryBlock buildCategoryBlock(
-            StatementCategory category,
-            List<ClientTestAnswer> answers
-    ) {
-        int totalScore = answers.stream()
-                .mapToInt(ClientTestAnswer::scoring)
-                .sum();
-
-        Map<String, Long> buckets = answers.stream()
-                .collect(Collectors.groupingBy(
-                        answer -> String.valueOf(answer.scoring()),
-                        Collectors.counting()));
+    private ScoringProfileBlock buildProfileBlock(StatementProfile profile, List<ClientTestAnswer> answers) {
+        int totalScore = answers.stream().mapToInt(ClientTestAnswer::scoring).sum();
+        int totalAnswers = answers.size();
+        double avgScore = totalAnswers == 0 ? 0.0 : (double) totalScore / totalAnswers;
+        double scorePercent = StatementProfile.computePercent(totalScore, totalAnswers);
+        String computedLabel = profile.computeLabel(scorePercent);
 
         List<ScoringStatementPair> pairs = answers.stream()
                 .map(answer -> new ScoringStatementPair(
@@ -110,21 +99,14 @@ public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestServic
                 .sorted(Comparator.comparingInt(ScoringStatementPair::getScoring))
                 .toList();
 
-        ProfileCategory profileCategory = new ProfileCategory(
-                category.name(),
-                category.getPlName()
-        );
-
-        double avgScore = answers.isEmpty()
-                ? 0.0
-                : (double) totalScore / answers.size();
-
-        return new ScoringCategoryBlock(
-                profileCategory,
-                answers.size(),
+        return new ScoringProfileBlock(
+                profile.name(),
+                profile.getPlName(),
+                computedLabel,
+                Math.round(scorePercent * 10.0) / 10.0,
+                totalAnswers,
                 totalScore,
-                avgScore,
-                buckets,
+                Math.round(avgScore * 100.0) / 100.0,
                 pairs
         );
     }

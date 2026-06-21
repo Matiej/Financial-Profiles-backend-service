@@ -10,7 +10,6 @@ import com.emat.reapi.clienttest.infra.ClientTestDocument;
 import com.emat.reapi.clienttest.infra.ClientTestRepository;
 import com.emat.reapi.fptest.FpTestService;
 import com.emat.reapi.fptest.domain.FpTest;
-import com.emat.reapi.infrastructure.n8n.ClientScoreTestNotification;
 import com.emat.reapi.infrastructure.n8n.N8nService;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.domain.StatementType;
@@ -27,6 +26,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -73,7 +74,8 @@ public class ClientTestServiceImpl implements ClientTestService {
                                 List<ClientTestQuestion> clientTestQuestions = definitions
                                         .stream()
                                         .map(this::mapToTestQuestions)
-                                        .toList();
+                                        .collect(Collectors.toCollection(ArrayList::new));
+                                Collections.shuffle(clientTestQuestions);
                                 return new ClientTest(
                                         fpTest.testName(),
                                         fpTest.descriptionBefore(),

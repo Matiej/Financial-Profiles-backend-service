@@ -1,0 +1,38 @@
+spring:
+  data:
+    mongodb:
+      auto-index-creation: false
+  ai:
+    openai:
+      api-key: sk-test-dummy-key
+      base-url: http://localhost:9999/v1
+
+mongock:
+  enabled: false
+
+tally:
+  signing-secret: tally-test-secret
+
+app:
+  version: 0.0.1-TEST
+  name: profiler-service-test
+  security:
+    swagger-public: false
+    swagger-url: http://localhost:8100
+    swagger-token: http://localhost:9999/realms/test-realm/protocol/openid-connect/token
+  client:
+    n8n:
+      base-url: http://localhost:9999
+
+keycloak:
+  admin:
+    base-url: http://localhost:9999
+    realm: test-realm
+    client-id: test-client
+    client-secret: test-secret
+    calculator-role-id: test-role-id
+    calculator-role-name: CALCULATOR_USER
+    frontend-client-id: test-frontend-client
+
+prompt:
+  analytics: Test prompt

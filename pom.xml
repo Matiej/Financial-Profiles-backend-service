@@ -29,7 +29,24 @@
     <properties>
         <java.version>21</java.version>
         <logback.version>1.5.21</logback.version>
+        <groovy.version>4.0.27</groovy.version>
+        <spock.version>2.4-M6-groovy-4.0</spock.version>
+        <!-- Testcontainers 2.0 split core and module versioning: the core jumped to 2.0.x
+             (newer docker-java, required for Docker Desktop 29.x / API >= 1.44), while the
+             module artifacts (mongodb, spock) stayed on the 1.21.x line. They are designed
+             to interoperate; the explicit core dep takes precedence over the modules'
+             transitive core. -->
+        <testcontainers.version>2.0.5</testcontainers.version>
+        <testcontainers-modules.version>1.21.1</testcontainers-modules.version>
+        <wiremock.version>3.12.1</wiremock.version>
+        <springdoc.version>2.8.14</springdoc.version>
+        <spring-ai-openai.version>1.0.2</spring-ai-openai.version>
+        <spring-ai-vector-store.version>1.0.0</spring-ai-vector-store.version>
+        <json-schema-validator.version>1.5.9</json-schema-validator.version>
+        <mongock.version>5.5.1</mongock.version>
+        <gmavenplus-plugin.version>4.1.1</gmavenplus-plugin.version>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -69,6 +86,61 @@
             <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Spock + Groovy -->
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+            <version>${groovy.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.spockframework</groupId>
+            <artifactId>spock-core</artifactId>
+            <version>${spock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.spockframework</groupId>
+            <artifactId>spock-spring</artifactId>
+            <version>${spock.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers - core on 2.0.x, modules on 1.21.x (see properties note) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <version>${testcontainers-modules.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>spock</artifactId>
+            <version>${testcontainers-modules.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WireMock -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Security Test -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 <!--       -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -79,24 +151,24 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-            <version>2.8.14</version>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-openai</artifactId>
-            <version>1.0.2</version>
+            <version>${spring-ai-openai.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-vector-store</artifactId>
-            <version>1.0.0</version>
+            <version>${spring-ai-vector-store.version}</version>
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
-            <version>1.5.9</version>
+            <version>${json-schema-validator.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -106,12 +178,12 @@
         <dependency>
             <groupId>io.mongock</groupId>
             <artifactId>mongock-springboot-v3</artifactId>
-            <version>5.5.1</version>
+            <version>${mongock.version}</version>
         </dependency>
         <dependency>
             <groupId>io.mongock</groupId>
             <artifactId>mongodb-springdata-v4-driver</artifactId>
-            <version>5.5.1</version>
+            <version>${mongock.version}</version>
         </dependency>
     </dependencies>
 
@@ -130,6 +202,86 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Groovy compilation -->
+            <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>${gmavenplus-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compileTests</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Integration test sources -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-integration-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/integration/groovy</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-integration-test-resource</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>add-test-resource</goal>
+                        </goals>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>src/integration/resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Unit tests - exclude integration -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/integration/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Integration tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*Spec.java</include>
+                        <include>**/*Spec.groovy</include>
+                    </includes>
+                    <testSourceDirectory>src/integration/groovy</testSourceDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

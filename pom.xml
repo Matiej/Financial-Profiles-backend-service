@@ -291,6 +291,7 @@
                         <include>**/*Spec.groovy</include>
                     </includes>
                     <testSourceDirectory>src/integration/groovy</testSourceDirectory>
+                    <argLine>-XX:+EnableDynamicAgentLoading</argLine>
                 </configuration>
                 <executions>
                     <execution>

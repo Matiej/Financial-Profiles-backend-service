@@ -28,6 +28,7 @@ public class NumerologyDateCalculatorDocument {
     private int personalMonth;
     private int worldDayVibration;
     private int personalDay;
+    private String userName;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate
@@ -35,7 +36,7 @@ public class NumerologyDateCalculatorDocument {
     @Version
     private Long version;
 
-    public NumerologyDateCalculatorDocument(String requestedBrithDate, String requestedReferenceDate, String mainVibration, int personalYear, int yearOfGlobalEnergy, int numerologyYear, int personalMonth, int worldDayVibration, int personalDay) {
+    public NumerologyDateCalculatorDocument(String requestedBrithDate, String requestedReferenceDate, String mainVibration, int personalYear, int yearOfGlobalEnergy, int numerologyYear, int personalMonth, int worldDayVibration, int personalDay, String userName) {
         this.requestedBrithDate = requestedBrithDate;
         this.requestedReferenceDate = requestedReferenceDate;
         this.mainVibration = mainVibration;
@@ -45,6 +46,7 @@ public class NumerologyDateCalculatorDocument {
         this.personalMonth = personalMonth;
         this.worldDayVibration = worldDayVibration;
         this.personalDay = personalDay;
+        this.userName = userName;
     }
 }
 

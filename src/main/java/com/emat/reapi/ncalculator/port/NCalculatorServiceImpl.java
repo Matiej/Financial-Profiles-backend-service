@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -21,9 +22,10 @@ import java.time.format.DateTimeParseException;
 public class NCalculatorServiceImpl implements NCalculatorService {
     private final NumerologyPhaseCalculatorRepository numerologyPhaseCalculatorRepository;
     private final NumerologyDateCalculatorRepository numerologyDateCalculatorRepository;
+    private final Clock clock;
 
     @Override
-    public Mono<NumerologyPhraseCalculator> calculatePhrase(String phrase) {
+    public Mono<NumerologyPhraseCalculator> calculatePhrase(String phrase, String userName) {
         if (phrase == null) {
             return Mono.error(new IllegalArgumentException("Phrase cannot be null"));
         }
@@ -72,6 +74,7 @@ public class NCalculatorServiceImpl implements NCalculatorService {
                 vowelsVibration,
                 consonantsVibration,
                 vibration,
+                userName,
                 null,
                 null,
                 null
@@ -112,7 +115,7 @@ public class NCalculatorServiceImpl implements NCalculatorService {
     }
 
     @Override
-    public Mono<NumerologyDatesCalculator> calculateDates(String birthDate, String referenceDate) {
+    public Mono<NumerologyDatesCalculator> calculateDates(String birthDate, String referenceDate, String userName) {
         if (birthDate == null) {
             return Mono.error(new IllegalArgumentException("birthDate cannot be null"));
         }
@@ -127,7 +130,7 @@ public class NCalculatorServiceImpl implements NCalculatorService {
         }
 
         if (referenceDate == null || referenceDate.isBlank()) {
-            reference = LocalDate.now(ZoneOffset.UTC);
+            reference = LocalDate.now(clock);
         } else {
             try {
                 reference = LocalDate.parse(referenceDate);
@@ -141,8 +144,8 @@ public class NCalculatorServiceImpl implements NCalculatorService {
         // 2. Rok osobisty (RO)
         int personalYear = calculatePersonalYear(birth, reference);
 
-        // 3. Rok energii światowej (REŚ)
-        int yearOfGlobalEnergy = calculateYearOfGlobalEnergy(LocalDate.now());
+        // 3. Rok energii światowej (REŚ) - zawsze wg bieżącego roku (z wstrzykiwanego zegara)
+        int yearOfGlobalEnergy = calculateYearOfGlobalEnergy(LocalDate.now(clock));
 
         // 4. Rok numerologiczny (RN)
         int numerologyYear = calculateNumerologyYear(birth, yearOfGlobalEnergy);
@@ -174,7 +177,8 @@ public class NCalculatorServiceImpl implements NCalculatorService {
                 numerologyYear,
                 personalMonth,
                 worldDayVibration,
-                personalDay
+                personalDay,
+                userName
         );
 
         return numerologyDateCalculatorRepository

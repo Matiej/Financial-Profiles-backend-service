@@ -214,6 +214,24 @@
                         <goals>
                             <goal>compileTests</goal>
                         </goals>
+                        <configuration>
+                            <!-- Default is only src/test/groovy; the Spock specs live in
+                                 src/integration/groovy, so both roots must be declared. -->
+                            <testSources>
+                                <testSource>
+                                    <directory>${project.basedir}/src/test/groovy</directory>
+                                    <includes>
+                                        <include>**/*.groovy</include>
+                                    </includes>
+                                </testSource>
+                                <testSource>
+                                    <directory>${project.basedir}/src/integration/groovy</directory>
+                                    <includes>
+                                        <include>**/*.groovy</include>
+                                    </includes>
+                                </testSource>
+                            </testSources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

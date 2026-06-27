@@ -23,6 +23,7 @@ public class NumerologyPhaseCalculatorDocument {
     private String vowelsResult;
     private String consonantsResult;
     private String vibration;
+    private String userName;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate

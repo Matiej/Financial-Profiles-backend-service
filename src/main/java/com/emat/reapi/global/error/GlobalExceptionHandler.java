@@ -72,7 +72,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SubmissionException.class)
     public ResponseEntity<ErrorResponse> handleSubmissionException(SubmissionException ex, ServerHttpRequest request) {
         log.warn("SubmissionException: {}", ex.getMessage(), ex);
-        HttpStatus status = HttpStatus.BAD_REQUEST;
+        HttpStatus status = ex.getType() == SubmissionException.SubmissionErrorType.SUBMISSION_NOT_FOUND
+                ? HttpStatus.NOT_FOUND
+                : HttpStatus.BAD_REQUEST;
         ErrorResponse errorResponse = ErrorResponse.of(
                 status.value(),
                 status.getReasonPhrase(),

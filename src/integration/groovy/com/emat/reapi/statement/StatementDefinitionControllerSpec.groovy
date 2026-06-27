@@ -111,21 +111,15 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
                 .expectStatus().isBadRequest()
     }
 
-    def "should accept a definition with no fields because the DTO has no validation"() {
-        when: "the StatementDefinitionDto carries no bean-validation constraints despite @Valid"
-        def result = authenticatedPost("/api/definition", "BUSINESS_ADMIN")
+    def "should return 400 for an empty body"() {
+        expect:
+        authenticatedPost("/api/definition", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([:])
                 .exchange()
-
-        then: "an all-null definition is still created (current behavior, likely a refactor target)"
-        result.expectStatus().isCreated()
-
-        and:
-        def saved = mongoTemplate.findAll(StatementDefinitionDocument).collectList().block()
-        saved.size() == 1
-        saved[0].statementKey == null
-        saved[0].category == null
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
     }
 
     def "should return 401 for GET /api/definition without a token"() {

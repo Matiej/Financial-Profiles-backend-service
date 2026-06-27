@@ -67,30 +67,28 @@ class FpTestServiceImpl implements FpTestService {
                         HttpStatus.NOT_FOUND,
                         "Test with testId=" + fpTestDto.testId() + " not found"
                 )))
-                .zipWith(buildFpTestStatements(fpTestDto.statementKeys()))
-                .flatMap((both) -> {
-                    List<FpTestStatement> fpTestStatements = both.getT2();
-                    FpTestDocument existing = both.getT1();
-                    existing.setTestName(fpTestDto.testName());
-                    existing.setDescriptionBefore(fpTestDto.descriptionBefore());
-                    existing.setDescriptionAfter(fpTestDto.descriptionAfter());
+                .flatMap(existing -> buildFpTestStatements(fpTestDto.statementKeys())
+                        .flatMap(fpTestStatements -> {
+                            existing.setTestName(fpTestDto.testName());
+                            existing.setDescriptionBefore(fpTestDto.descriptionBefore());
+                            existing.setDescriptionAfter(fpTestDto.descriptionAfter());
 
-                    return submissionService.existsByTestId(existing.getTestId())
-                            .flatMap(isSubmission -> {
-                                List<String> currentStatements = existing.getFpTestStatementDocuments()
-                                        .stream()
-                                        .map(FpTestStatementDocument::statementKey)
-                                        .toList();
-                                if (!areStatementsTheSame(fpTestDto.statementKeys(), currentStatements) && isSubmission) {
-                                    return Mono.error(new FpTestStateException(
-                                            "Can't update statements in test with ID: " + existing.getTestId() + " because is already submitted!",
-                                            FpTestStateException.FpTestErrorType.FP_TEST_EDIT_ERROR
-                                    ));
-                                }
-                                existing.setFpTestStatementDocuments(FpTestStatementDocument.fromDomainlist(fpTestStatements));
-                                return fpTestRepository.save(existing);
-                            });
-                })
+                            return submissionService.existsByTestId(existing.getTestId())
+                                    .flatMap(isSubmission -> {
+                                        List<String> currentStatements = existing.getFpTestStatementDocuments()
+                                                .stream()
+                                                .map(FpTestStatementDocument::statementKey)
+                                                .toList();
+                                        if (!areStatementsTheSame(fpTestDto.statementKeys(), currentStatements) && isSubmission) {
+                                            return Mono.error(new FpTestStateException(
+                                                    "Can't update statements in test with ID: " + existing.getTestId() + " because is already submitted!",
+                                                    FpTestStateException.FpTestErrorType.FP_TEST_EDIT_ERROR
+                                            ));
+                                        }
+                                        existing.setFpTestStatementDocuments(FpTestStatementDocument.fromDomainlist(fpTestStatements));
+                                        return fpTestRepository.save(existing);
+                                    });
+                        }))
                 .flatMap(doc -> mapToResponseWithSubmissions(doc.toDomain()));
     }
 

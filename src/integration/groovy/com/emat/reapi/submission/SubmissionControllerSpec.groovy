@@ -223,6 +223,14 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         saved[0].status == SubmissionStatus.DONE
     }
 
+    def "should return 404 when closing an unknown submission"() {
+        expect:
+        authenticatedPut("/api/submission/sub_missing/close", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isNotFound()
+                .expectBody()
+                .jsonPath('$.code').isEqualTo("SUBMISSION_NOT_FOUND")
+    }
+
     def "should delete an OPEN submission, returning 202"() {
         given:
         seedSubmission("sub_delete", SubmissionStatus.OPEN)

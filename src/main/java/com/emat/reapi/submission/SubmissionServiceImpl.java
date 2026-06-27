@@ -134,18 +134,24 @@ class SubmissionServiceImpl implements SubmissionService {
     @Override
     public Mono<Submission> closeSubmission(String submissionId) {
         return submissionRepository.findBySubmissionId(submissionId)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Can't find submissionId: " + submissionId)))
+                .switchIfEmpty(Mono.error(new SubmissionException(
+                        "Submission not found: " + submissionId,
+                        SubmissionException.SubmissionErrorType.SUBMISSION_NOT_FOUND
+                )))
                 .flatMap(document -> {
                             document.setStatus(SubmissionStatus.DONE);
                             return submissionRepository.save(document);
                         }
                 )
                 .map(SubmissionDocument::toDomain)
-                .doOnSuccess(suc -> log.info("Submission ID: {} updated successful", submissionId))
+                .doOnSuccess(suc -> log.info("Submission ID: {} closed successful", submissionId))
                 .onErrorMap(e -> {
-                    log.error("Error updating submission ID: {}", submissionId, e);
+                    log.error("Error closing submission ID: {}", submissionId, e);
+                    if (e instanceof SubmissionException) {
+                        return e;
+                    }
                     return new SubmissionException(
-                            "Failed to create submission",
+                            "Failed to close submission",
                             e,
                             SubmissionException.SubmissionErrorType.SUBMISSION_UPDATE_ERROR);
                 });

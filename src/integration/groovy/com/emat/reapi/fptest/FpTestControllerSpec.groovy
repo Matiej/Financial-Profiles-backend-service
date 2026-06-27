@@ -84,17 +84,19 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(fpTestPayload())
                 .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isCreated()
-                .expectBody()
-                .jsonPath('$.testId').value({ it.startsWith("fpt_") })
-                .jsonPath('$.testName').isEqualTo("Finanse 1")
-                .jsonPath('$.fpTestStatementDtoList.length()').isEqualTo(1)
-                .jsonPath('$.fpTestStatementDtoList[0].statementKey').isEqualTo("p1_q1")
-                .jsonPath('$.fpTestStatementDtoList[0].statementsDescription').isEqualTo("ograniczajace p1_q1-wspierajace p1_q1")
-                .jsonPath('$.fpTestStatementDtoList[0].statementsCategory').isEqualTo("Strażniczka Braku")
-                .jsonPath('$.submissionIds.length()').isEqualTo(0)
+        result.testId.startsWith("fpt_")
+        result.testName == "Finanse 1"
+        result.fpTestStatementDtoList.size() == 1
+        result.fpTestStatementDtoList[0].statementKey == "p1_q1"
+        result.fpTestStatementDtoList[0].statementsDescription == "ograniczajace p1_q1-wspierajace p1_q1"
+        result.fpTestStatementDtoList[0].statementsCategory == "Strażniczka Braku"
+        result.submissionIds.size() == 0
 
         and:
         def saved = mongoTemplate.findAll(FpTestDocument).collectList().block()
@@ -108,11 +110,13 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(fpTestPayload(statementKeys: ["does_not_exist"]))
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("GENERIC_STATUS_ERROR")
+        result.code == "GENERIC_STATUS_ERROR"
 
         and: "nothing is persisted"
         mongoTemplate.findAll(FpTestDocument).collectList().block().isEmpty()
@@ -122,14 +126,18 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         given:
         seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
 
-        expect:
-        authenticatedPost("/api/pftest", "BUSINESS_ADMIN")
+        when:
+        def result = authenticatedPost("/api/pftest", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(fpTestPayload(testName: ""))
                 .exchange()
                 .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "VALIDATION_ERROR"
     }
 
     def "should return all tests"() {
@@ -139,13 +147,14 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = authenticatedGet("/api/pftest", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.length()').isEqualTo(2)
-                .jsonPath('$[?(@.testId == "fpt_a")]').exists()
-                .jsonPath('$[?(@.testId == "fpt_b")]').exists()
+        result.size() == 2
+        result.collect { it.testId } as Set == ["fpt_a", "fpt_b"] as Set
     }
 
     def "should return a test by testId"() {
@@ -154,19 +163,25 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = authenticatedGet("/api/pftest/fpt_find", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.testId').isEqualTo("fpt_find")
+        result.testId == "fpt_find"
     }
 
     def "should return 404 for an unknown testId"() {
-        expect:
-        authenticatedGet("/api/pftest/fpt_missing", "BUSINESS_ADMIN").exchange()
+        when:
+        def result = authenticatedGet("/api/pftest/fpt_missing", "BUSINESS_ADMIN").exchange()
                 .expectStatus().isNotFound()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("GENERIC_STATUS_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "GENERIC_STATUS_ERROR"
     }
 
     def "should update a test without submissions"() {
@@ -180,13 +195,15 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(fpTestPayload(testName: "Zmieniony", statementKeys: ["p1_q1", "p2_q1"]))
                 .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.testId').isEqualTo("fpt_upd")
-                .jsonPath('$.testName').isEqualTo("Zmieniony")
-                .jsonPath('$.fpTestStatementDtoList.length()').isEqualTo(2)
+        result.testId == "fpt_upd"
+        result.testName == "Zmieniony"
+        result.fpTestStatementDtoList.size() == 2
     }
 
     def "should return 409 when changing statements of a test that already has submissions"() {
@@ -196,14 +213,18 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_guard", ["p1_q1"])
         seedSubmissionForTest("fpt_guard")
 
-        expect:
-        authenticatedPut("/api/pftest/fpt_guard", "BUSINESS_ADMIN")
+        when:
+        def result = authenticatedPut("/api/pftest/fpt_guard", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(fpTestPayload(statementKeys: ["p1_q1", "p2_q1"]))
                 .exchange()
                 .expectStatus().isEqualTo(409)
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("FP_TEST_EDIT_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "FP_TEST_EDIT_ERROR"
     }
 
     def "should allow re-sending the same statements when submissions exist"() {
@@ -212,24 +233,32 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_same", ["p1_q1"])
         seedSubmissionForTest("fpt_same")
 
-        expect: "same statement keys -> integrity guard does not fire"
-        authenticatedPut("/api/pftest/fpt_same", "BUSINESS_ADMIN")
+        when: "same statement keys -> integrity guard does not fire"
+        def response = authenticatedPut("/api/pftest/fpt_same", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(fpTestPayload(testName: "Inny tytul", statementKeys: ["p1_q1"]))
                 .exchange()
-                .expectStatus().isOk()
+
+        then:
+        response.expectStatus().isOk()
     }
 
     def "should return 404 when updating an unknown testId"() {
         given:
         seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
 
-        expect:
-        authenticatedPut("/api/pftest/fpt_missing", "BUSINESS_ADMIN")
+        when:
+        def result = authenticatedPut("/api/pftest/fpt_missing", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(fpTestPayload())
                 .exchange()
                 .expectStatus().isNotFound()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "GENERIC_STATUS_ERROR"
     }
 
     def "should delete a test without submissions"() {
@@ -237,12 +266,10 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_del", ["p1_q1"])
 
         when:
-        def result = authenticatedDelete("/api/pftest/fpt_del", "BUSINESS_ADMIN").exchange()
+        authenticatedDelete("/api/pftest/fpt_del", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isEqualTo(202)
 
         then:
-        result.expectStatus().isEqualTo(202)
-
-        and:
         mongoTemplate.findAll(FpTestDocument).collectList().block().isEmpty()
     }
 
@@ -251,20 +278,30 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_del_guard", ["p1_q1"])
         seedSubmissionForTest("fpt_del_guard")
 
-        expect:
-        authenticatedDelete("/api/pftest/fpt_del_guard", "BUSINESS_ADMIN").exchange()
+        when:
+        def result = authenticatedDelete("/api/pftest/fpt_del_guard", "BUSINESS_ADMIN").exchange()
                 .expectStatus().isEqualTo(409)
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("FP_TEST_DELETE_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "FP_TEST_DELETE_ERROR"
 
         and: "the test is still present"
         mongoTemplate.findAll(FpTestDocument).collectList().block().size() == 1
     }
 
     def "should return 404 when deleting an unknown testId"() {
-        expect:
-        authenticatedDelete("/api/pftest/fpt_missing", "BUSINESS_ADMIN").exchange()
+        when:
+        def result = authenticatedDelete("/api/pftest/fpt_missing", "BUSINESS_ADMIN").exchange()
                 .expectStatus().isNotFound()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "GENERIC_STATUS_ERROR"
     }
 
     def "should return all available statements derived from the definitions"() {
@@ -274,28 +311,31 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = authenticatedGet("/api/pftest/statements", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.length()').isEqualTo(2)
-                .jsonPath('$[?(@.statementKey == "p1_q1")]').exists()
-                .jsonPath('$[?(@.statementKey == "p2_q1")]').exists()
+        result.size() == 2
+        result.collect { it.statementKey } as Set == ["p1_q1", "p2_q1"] as Set
     }
 
     def "should return 401 for GET /api/pftest without a token"() {
-        expect:
-        webTestClient.get().uri("/api/pftest")
-                .exchange()
-                .expectStatus().isUnauthorized()
+        when:
+        def response = webTestClient.get().uri("/api/pftest").exchange()
+
+        then:
+        response.expectStatus().isUnauthorized()
     }
 
     @Unroll
     def "should map role #role to status #status on the pftest endpoints"() {
-        expect:
-        authenticatedGet("/api/pftest", role)
-                .exchange()
-                .expectStatus().isEqualTo(status)
+        when:
+        def response = authenticatedGet("/api/pftest", role).exchange()
+
+        then:
+        response.expectStatus().isEqualTo(status)
 
         where:
         role              | status

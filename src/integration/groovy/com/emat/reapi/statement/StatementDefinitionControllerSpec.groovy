@@ -40,15 +40,17 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(definitionPayload("p1_q1", "PROFIL_1", "p1_q1"))
                 .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
-        then: "the controller echoes the saved definition with 201"
-        result.expectStatus().isCreated()
-                .expectBody()
-                .jsonPath('$.statementId').isEqualTo("p1_q1")
-                .jsonPath('$.category').isEqualTo("PROFIL_1")
-                .jsonPath('$.statementKey').isEqualTo("p1_q1")
-                .jsonPath('$.statementTypeDefinitions[0].statementType').isEqualTo("LIMITING")
-                .jsonPath('$.statementTypeDefinitions[1].statementType').isEqualTo("SUPPORTING")
+        then: "the controller echoes the saved definition"
+        result.statementId == "p1_q1"
+        result.category == "PROFIL_1"
+        result.statementKey == "p1_q1"
+        result.statementTypeDefinitions[0].statementType == "LIMITING"
+        result.statementTypeDefinitions[1].statementType == "SUPPORTING"
 
         and: "exactly one document is stored"
         def saved = mongoTemplate.findAll(StatementDefinitionDocument).collectList().block()
@@ -64,13 +66,14 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = authenticatedGet("/api/definition", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.length()').isEqualTo(2)
-                .jsonPath('$[?(@.statementKey == "p1_q1")]').exists()
-                .jsonPath('$[?(@.statementKey == "p2_q1")]').exists()
+        result.size() == 2
+        result.collect { it.statementKey } as Set == ["p1_q1", "p2_q1"] as Set
     }
 
     def "should return only the requested category, ordered by statementId ascending"() {
@@ -82,59 +85,71 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
         when:
         def result = authenticatedGet("/api/definition/category?category=PROFIL_1", "BUSINESS_ADMIN")
                 .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
 
         then: "only PROFIL_1 is returned, sorted by statementId asc (PROFIL_2 excluded)"
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.length()').isEqualTo(2)
-                .jsonPath('$[0].statementId').isEqualTo("p1_q1")
-                .jsonPath('$[1].statementId').isEqualTo("p1_q2")
-                .jsonPath('$[0].category').isEqualTo("PROFIL_1")
-                .jsonPath('$[1].category').isEqualTo("PROFIL_1")
+        result.size() == 2
+        result[0].statementId == "p1_q1"
+        result[1].statementId == "p1_q2"
+        result[0].category == "PROFIL_1"
+        result[1].category == "PROFIL_1"
     }
 
     def "should return an empty array for a category with no definitions"() {
         when:
         def result = authenticatedGet("/api/definition/category?category=PROFIL_8", "BUSINESS_ADMIN")
                 .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.length()').isEqualTo(0)
+        result.isEmpty()
     }
 
     def "should return 400 for an unknown category enum value"() {
-        expect:
-        authenticatedGet("/api/definition/category?category=NOT_A_PROFILE", "BUSINESS_ADMIN")
+        when:
+        def response = authenticatedGet("/api/definition/category?category=NOT_A_PROFILE", "BUSINESS_ADMIN")
                 .exchange()
-                .expectStatus().isBadRequest()
+
+        then:
+        response.expectStatus().isBadRequest()
     }
 
     def "should return 400 for an empty body"() {
-        expect:
-        authenticatedPost("/api/definition", "BUSINESS_ADMIN")
+        when:
+        def result = authenticatedPost("/api/definition", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([:])
                 .exchange()
                 .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "VALIDATION_ERROR"
     }
 
     def "should return 401 for GET /api/definition without a token"() {
-        expect:
-        webTestClient.get().uri("/api/definition")
-                .exchange()
-                .expectStatus().isUnauthorized()
+        when:
+        def response = webTestClient.get().uri("/api/definition").exchange()
+
+        then:
+        response.expectStatus().isUnauthorized()
     }
 
     @Unroll
     def "should map role #role to status #status on the definition endpoints"() {
-        expect:
-        authenticatedGet("/api/definition", role)
-                .exchange()
-                .expectStatus().isEqualTo(status)
+        when:
+        def response = authenticatedGet("/api/definition", role).exchange()
+
+        then:
+        response.expectStatus().isEqualTo(status)
 
         where:
         role              | status

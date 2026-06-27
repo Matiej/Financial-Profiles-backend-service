@@ -11,8 +11,7 @@ import spock.lang.Unroll
  * {@code NumerologyCalculatorController} before any refactor.
  *
  * The two clock-dependent fields of /dates ({@code yearOfGlobalEnergy},
- * {@code numerologyYear}) are asserted only structurally here; they are pinned
- * to exact values in Phase B once a {@code Clock} is injectable.
+ * {@code numerologyYear}) are pinned to exact values via the fixed test Clock.
  */
 class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
 
@@ -24,13 +23,15 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: "ANIA"])
                 .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.vowelsResult').isEqualTo("11/2")
-                .jsonPath('$.consonantsResult').isEqualTo("5")
-                .jsonPath('$.vibration').isEqualTo("16/7")
+        result.vowelsResult == "11/2"
+        result.consonantsResult == "5"
+        result.vibration == "16/7"
     }
 
     def "should compute vibrations for a phrase with Polish letters"() {
@@ -39,13 +40,15 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: "ŚĆŹ"])
                 .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then: "Ś=1, Ć=3, Ź=8 -> all consonants; total 12 -> 12/3"
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.vowelsResult').isEqualTo("0")
-                .jsonPath('$.consonantsResult').isEqualTo("12/3")
-                .jsonPath('$.vibration').isEqualTo("12/3")
+        result.vowelsResult == "0"
+        result.consonantsResult == "12/3"
+        result.vibration == "12/3"
     }
 
     def "should treat digits 1:1 and add them to consonants and total vibration"() {
@@ -54,13 +57,15 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: "AB12"])
                 .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then: "A(1) vowel; B(2)+1+2 consonants=5; total=6"
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.vowelsResult').isEqualTo("1")
-                .jsonPath('$.consonantsResult').isEqualTo("5")
-                .jsonPath('$.vibration').isEqualTo("6")
+        result.vowelsResult == "1"
+        result.consonantsResult == "5"
+        result.vibration == "6"
     }
 
     def "should reject an empty phrase with 400 validation error"() {
@@ -69,12 +74,14 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: ""])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
-                .jsonPath('$.details.phrase').exists()
+        result.code == "VALIDATION_ERROR"
+        result.details.phrase != null
     }
 
     def "should reject a null phrase with 400 illegal argument raised by the service"() {
@@ -83,11 +90,13 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: null])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("ILLEGAL_ARGUMENT")
+        result.code == "ILLEGAL_ARGUMENT"
     }
 
     def "should reject a phrase with disallowed characters with 400 validation error"() {
@@ -96,11 +105,13 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: "test@!"])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
+        result.code == "VALIDATION_ERROR"
     }
 
     def "should reject a phrase longer than 100 characters with 400 validation error"() {
@@ -109,11 +120,13 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: "A" * 101])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
+        result.code == "VALIDATION_ERROR"
     }
 
     def "should persist exactly one phrase calculation document"() {
@@ -140,19 +153,21 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([birthDate: "1978-05-21", referenceDate: "2025-11-11"])
                 .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then: "fields derived from the request, plus the clock-dependent ones pinned by the fixed test Clock (2025-11-11)"
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.mainVibration').isEqualTo("33/6")
-                .jsonPath('$.personalYear').isEqualTo(8)
-                .jsonPath('$.personalMonth').isEqualTo(1)
-                .jsonPath('$.worldDayVibration').isEqualTo(4)
-                .jsonPath('$.personalDay').isEqualTo(3)
-                // fixed clock -> MoonVirgo entry covering 2025-11-11 has yearVibration 1
-                .jsonPath('$.yearOfGlobalEnergy').isEqualTo(1)
-                // numerologyYear = reduce(reduce(mainVibrationDigits=6) + yearOfGlobalEnergy=1) = 7
-                .jsonPath('$.numerologyYear').isEqualTo(7)
+        result.mainVibration == "33/6"
+        result.personalYear == 8
+        result.personalMonth == 1
+        result.worldDayVibration == 4
+        result.personalDay == 3
+        // fixed clock -> MoonVirgo entry covering 2025-11-11 has yearVibration 1
+        result.yearOfGlobalEnergy == 1
+        // numerologyYear = reduce(reduce(mainVibrationDigits=6) + yearOfGlobalEnergy=1) = 7
+        result.numerologyYear == 7
     }
 
     def "should reject a regex-valid but impossible date with 400 illegal argument"() {
@@ -161,11 +176,13 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([birthDate: "2026-13-99", referenceDate: "2025-11-11"])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("ILLEGAL_ARGUMENT")
+        result.code == "ILLEGAL_ARGUMENT"
     }
 
     def "should reject a wrongly formatted date with 400 validation error"() {
@@ -174,12 +191,14 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([birthDate: "21-05-1978", referenceDate: "2025-11-11"])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
-                .jsonPath('$.details.birthDate').exists()
+        result.code == "VALIDATION_ERROR"
+        result.details.birthDate != null
     }
 
     def "should reject a missing birthDate with 400 validation error"() {
@@ -188,12 +207,14 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([referenceDate: "2025-11-11"])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
-                .jsonPath('$.details.birthDate').exists()
+        result.code == "VALIDATION_ERROR"
+        result.details.birthDate != null
     }
 
     def "should reject a missing referenceDate with 400 validation error"() {
@@ -202,12 +223,14 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([birthDate: "1978-05-21"])
                 .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
-                .jsonPath('$.details.referenceDate').exists()
+        result.code == "VALIDATION_ERROR"
+        result.details.referenceDate != null
     }
 
     def "should persist exactly one dates calculation document"() {
@@ -228,13 +251,16 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
 
     // --- security ------------------------------------------------------------
 
-    def "should return 401 for both endpoints without a token"() {
-        expect:
-        webTestClient.post().uri(uri)
+    @Unroll
+    def "should return 401 for POST #uri without a token"() {
+        when:
+        def response = webTestClient.post().uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
                 .exchange()
-                .expectStatus().isUnauthorized()
+
+        then:
+        response.expectStatus().isUnauthorized()
 
         where:
         uri                          | body
@@ -244,12 +270,14 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
 
     @Unroll
     def "should grant #role access to #uri"() {
-        expect:
-        authenticatedPost(uri, role)
+        when:
+        def response = authenticatedPost(uri, role)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body)
                 .exchange()
-                .expectStatus().isOk()
+
+        then:
+        response.expectStatus().isOk()
 
         where:
         role             | uri                        | body
@@ -262,11 +290,13 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
     }
 
     def "should return 403 for an unrelated role"() {
-        expect:
-        authenticatedPost("/api/ncalculator/phrase", "SOME_OTHER")
+        when:
+        def response = authenticatedPost("/api/ncalculator/phrase", "SOME_OTHER")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([phrase: "ANIA"])
                 .exchange()
-                .expectStatus().isForbidden()
+
+        then:
+        response.expectStatus().isForbidden()
     }
 }

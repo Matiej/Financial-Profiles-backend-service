@@ -9,17 +9,14 @@ import spock.lang.Unroll
 import java.time.Instant
 
 /**
- * Characterization tests pinning the CURRENT behavior of
- * {@code SubmissionController} before any refactor.
+ * Characterization tests for {@code SubmissionController}.
  *
- * Notable divergences from the original plan, intentionally pinned here:
- *  - {@code GET /{id}} of a missing submission returns 400 ({@code SUBMISSION_NOT_FOUND}),
- *    NOT 404 — {@code GlobalExceptionHandler} maps every {@code SubmissionException} to 400.
+ * Notable design decisions:
+ *  - {@code clientEmail} is optional on both create and update; when provided it must be a valid e-mail.
+ *  - {@code GET /{id}} of a missing submission returns 404 ({@code SUBMISSION_NOT_FOUND}).
  *  - {@code DELETE /{id}} of a missing submission is a no-op returning 202 (no error path).
  *  - The "duplicate orderId" conflict cannot occur: the service always appends a fresh
  *    {@code _UUID} suffix to the incoming orderId, so stored orderIds are globally unique.
- *  - {@code PUT /{id}} updates clientName/testId/durationDays but IGNORES clientEmail,
- *    even though the DTO requires it.
  */
 class SubmissionControllerSpec extends BaseIntegrationSpec {
 
@@ -97,7 +94,6 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
 
         where:
         scenario                | overrides
-        "blank clientEmail"     | [clientEmail: ""]
         "invalid email format"  | [clientEmail: "not-an-email"]
         "blank clientId"        | [clientId: ""]
         "blank clientName"      | [clientName: ""]
@@ -137,10 +133,10 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                 .jsonPath('$.status').isEqualTo("OPEN")
     }
 
-    def "should return 400 SUBMISSION_NOT_FOUND for an unknown submissionId (not 404)"() {
+    def "should return 404 SUBMISSION_NOT_FOUND for an unknown submissionId"() {
         expect:
         authenticatedGet("/api/submission/sub_missing", "BUSINESS_ADMIN").exchange()
-                .expectStatus().isBadRequest()
+                .expectStatus().isNotFound()
                 .expectBody()
                 .jsonPath('$.code').isEqualTo("SUBMISSION_NOT_FOUND")
     }
@@ -160,19 +156,19 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                 ])
                 .exchange()
 
-        then: "clientName, testId and durationDays are updated"
+        then: "clientName, clientEmail, testId and durationDays are updated"
         result.expectStatus().isOk()
                 .expectBody()
                 .jsonPath('$.clientName').isEqualTo("Anna Nowak")
                 .jsonPath('$.testId').isEqualTo("test-2")
 
-        and: "the stored document reflects the update but keeps the original clientEmail (service ignores it)"
+        and: "the stored document reflects all updated fields including clientEmail"
         def saved = mongoTemplate.findAll(SubmissionDocument).collectList().block()
         saved.size() == 1
         saved[0].clientName == "Anna Nowak"
         saved[0].testId == "test-2"
         saved[0].durationDays == 14
-        saved[0].clientEmail == "jan@example.com"
+        saved[0].clientEmail == "anna@example.com"
     }
 
     def "should return 409 when updating a DONE submission"() {
@@ -194,7 +190,7 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                 .jsonPath('$.code').isEqualTo("SUBMISSION_UPDATE_ERROR")
     }
 
-    def "should return 400 when updating an unknown submission"() {
+    def "should return 404 when updating an unknown submission"() {
         expect:
         authenticatedPut("/api/submission/sub_missing", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -205,7 +201,7 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                         durationDays: 14
                 ])
                 .exchange()
-                .expectStatus().isBadRequest()
+                .expectStatus().isNotFound()
     }
 
     def "should close an OPEN submission, returning 202 and status DONE"() {

@@ -64,7 +64,10 @@ class SubmissionServiceImpl implements SubmissionService {
     @Override
     public Mono<Submission> updateSubmission(SubmissionUpdateDto request, String submissionId) {
         return submissionRepository.findBySubmissionId(submissionId)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Can't find submissionId: " + submissionId)))
+                .switchIfEmpty(Mono.error(new SubmissionException(
+                        "Submission not found: " + submissionId,
+                        SubmissionException.SubmissionErrorType.SUBMISSION_NOT_FOUND
+                )))
                 .flatMap(document -> {
                             if (document.getStatus() == SubmissionStatus.DONE) {
                                 return Mono.error(
@@ -74,6 +77,7 @@ class SubmissionServiceImpl implements SubmissionService {
                                         )
                                 );
                             }
+                            document.setClientEmail(request.clientEmail());
                             document.setClientName(request.clientName());
                             document.setTestId(request.testId());
                             document.setDurationDays(request.durationDays());
@@ -85,11 +89,11 @@ class SubmissionServiceImpl implements SubmissionService {
                 .doOnSuccess(suc -> log.info("Submission ID: {} updated successful", submissionId))
                 .onErrorMap(e -> {
                     log.error("Error updating submission ID: {}", submissionId, e);
-                    if (e instanceof SubmissionStateException) {
+                    if (e instanceof SubmissionStateException || e instanceof SubmissionException) {
                         return e;
                     } else {
                         return new SubmissionException(
-                                "Failed to create submission",
+                                "Failed to update submission",
                                 e,
                                 SubmissionException.SubmissionErrorType.SUBMISSION_UPDATE_ERROR);
                     }

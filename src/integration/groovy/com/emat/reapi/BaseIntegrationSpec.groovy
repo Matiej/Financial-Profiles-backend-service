@@ -1,5 +1,6 @@
 package com.emat.reapi
 
+import com.emat.reapi.configuration.TestClockConfiguration
 import com.emat.reapi.configuration.TestSecurityConfiguration
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,7 +16,7 @@ import spock.lang.Specification
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(TestSecurityConfiguration)
+@Import([TestSecurityConfiguration, TestClockConfiguration])
 @Testcontainers
 abstract class BaseIntegrationSpec extends Specification {
 

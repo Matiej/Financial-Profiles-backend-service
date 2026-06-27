@@ -29,6 +29,7 @@ class TestSecurityConfiguration {
                     Jwt.withTokenValue(token)
                             .header("alg", "none")
                             .claim("sub", "test-user")
+                            .claim("preferred_username", "test-user")
                             .claim("realm_access", [roles: roles])
                             .issuedAt(Instant.now())
                             .expiresAt(Instant.now().plusSeconds(3600))

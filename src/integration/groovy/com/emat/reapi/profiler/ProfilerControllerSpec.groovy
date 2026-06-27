@@ -1,8 +1,12 @@
 package com.emat.reapi.profiler
 
-import com.emat.reapi.BaseSeededIntegrationSpec
+import com.emat.reapi.BaseIntegrationSpec
+import com.emat.reapi.clienttest.infra.ClientTestAnswerDocument
+import com.emat.reapi.clienttest.infra.ClientTestDocument
 import com.emat.reapi.statement.domain.StatementProfile
 import spock.lang.Unroll
+
+import java.time.Instant
 
 /**
  * Characterization tests pinning the CURRENT behavior of {@code ProfilerController}
@@ -22,11 +26,46 @@ import spock.lang.Unroll
  *    Label thresholds: {@code <=0} → blokada, {@code <68} → strefa przejściowa,
  *    {@code >=68} → zasoby.
  *
- * Seed used in scoring tests (all via {@link com.emat.reapi.BaseSeededIntegrationSpec}):
+ * Seed used in scoring tests (via the local {@code seedClientTest}/{@code answer} helpers):
  *  - 2 PROFIL_1 answers scoring 2 each  → totalScore=4, percent=100.0 → zasoby
  *  - 2 PROFIL_2 answers scoring 0 each  → totalScore=0, percent=0.0   → blokada
  */
-class ProfilerControllerSpec extends BaseSeededIntegrationSpec {
+class ProfilerControllerSpec extends BaseIntegrationSpec {
+
+    // ---- seed helpers ----
+
+    /**
+     * Seeds a completed client test (the record created after a client submits answers).
+     * This is the document read by the ProfilerController scoring endpoints.
+     */
+    private ClientTestDocument seedClientTest(String testSubmissionPublicId,
+                                              String submissionId,
+                                              String testId,
+                                              List<ClientTestAnswerDocument> answers) {
+        def doc = new ClientTestDocument()
+        doc.testSubmissionPublicId = testSubmissionPublicId
+        doc.submissionId = submissionId
+        doc.clientId = "client-1"
+        doc.clientName = "Anna Testowa"
+        doc.clientEmail = "anna@example.com"
+        doc.testId = testId
+        doc.testName = "Test " + testId
+        doc.submissionDate = Instant.now()
+        doc.publicToken = "pt_" + testSubmissionPublicId
+        doc.answers = answers
+        mongoTemplate.insert(doc).block()
+        return doc
+    }
+
+    private static ClientTestAnswerDocument answer(String questionKey, StatementProfile category, int scoring) {
+        new ClientTestAnswerDocument(
+                questionKey,
+                category,
+                "ograniczajace " + questionKey,
+                "wspierajace " + questionKey,
+                scoring
+        )
+    }
 
     // ---- GET /api/profiler — Tally-based (smoke only, planned for removal) ----
 

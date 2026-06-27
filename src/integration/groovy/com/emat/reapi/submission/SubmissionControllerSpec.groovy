@@ -56,19 +56,21 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(submissionPayload())
                 .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
-        then: "the controller echoes the created submission with 201"
-        result.expectStatus().isCreated()
-                .expectBody()
-                .jsonPath('$.submissionId').value({ it.startsWith("sub_") })
-                .jsonPath('$.publicToken').value({ it.startsWith("pt_") })
-                .jsonPath('$.clientId').isEqualTo("client-1")
-                .jsonPath('$.clientName').isEqualTo("Jan Kowalski")
-                .jsonPath('$.clientEmail').isEqualTo("jan@example.com")
-                .jsonPath('$.testId').isEqualTo("test-1")
-                .jsonPath('$.status').isEqualTo("OPEN")
-                .jsonPath('$.orderId').value({ it.startsWith("order-1_") })
-                .jsonPath('$.remainingSeconds').value({ (it as long) > 0 })
+        then: "the controller echoes the created submission"
+        result.submissionId.startsWith("sub_")
+        result.publicToken.startsWith("pt_")
+        result.clientId == "client-1"
+        result.clientName == "Jan Kowalski"
+        result.clientEmail == "jan@example.com"
+        result.testId == "test-1"
+        result.status == "OPEN"
+        result.orderId.startsWith("order-1_")
+        (result.remainingSeconds as long) > 0
 
         and: "exactly one OPEN document is stored"
         def saved = mongoTemplate.findAll(SubmissionDocument).collectList().block()
@@ -83,14 +85,18 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
 
     @Unroll
     def "should return 400 for invalid create payload: #scenario"() {
-        expect:
-        authenticatedPost("/api/submission", "BUSINESS_ADMIN")
+        when:
+        def result = authenticatedPost("/api/submission", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(submissionPayload(overrides))
                 .exchange()
                 .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "VALIDATION_ERROR"
 
         where:
         scenario                | overrides
@@ -110,13 +116,15 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = authenticatedGet("/api/submission", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
 
         then: "newest first"
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.length()').isEqualTo(2)
-                .jsonPath('$[0].submissionId').isEqualTo("sub_newer")
-                .jsonPath('$[1].submissionId').isEqualTo("sub_older")
+        result.size() == 2
+        result[0].submissionId == "sub_newer"
+        result[1].submissionId == "sub_older"
     }
 
     def "should return a submission by submissionId"() {
@@ -125,20 +133,26 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = authenticatedGet("/api/submission/sub_find_me", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.submissionId').isEqualTo("sub_find_me")
-                .jsonPath('$.status').isEqualTo("OPEN")
+        result.submissionId == "sub_find_me"
+        result.status == "OPEN"
     }
 
     def "should return 404 SUBMISSION_NOT_FOUND for an unknown submissionId"() {
-        expect:
-        authenticatedGet("/api/submission/sub_missing", "BUSINESS_ADMIN").exchange()
+        when:
+        def result = authenticatedGet("/api/submission/sub_missing", "BUSINESS_ADMIN").exchange()
                 .expectStatus().isNotFound()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("SUBMISSION_NOT_FOUND")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "SUBMISSION_NOT_FOUND"
     }
 
     def "should update an OPEN submission and return 200"() {
@@ -155,12 +169,14 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                         durationDays: 14
                 ])
                 .exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then: "clientName, clientEmail, testId and durationDays are updated"
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.clientName').isEqualTo("Anna Nowak")
-                .jsonPath('$.testId').isEqualTo("test-2")
+        result.clientName == "Anna Nowak"
+        result.testId == "test-2"
 
         and: "the stored document reflects all updated fields including clientEmail"
         def saved = mongoTemplate.findAll(SubmissionDocument).collectList().block()
@@ -175,8 +191,8 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         given:
         seedSubmission("sub_done", SubmissionStatus.DONE)
 
-        expect:
-        authenticatedPut("/api/submission/sub_done", "BUSINESS_ADMIN")
+        when:
+        def result = authenticatedPut("/api/submission/sub_done", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         clientName  : "Anna Nowak",
@@ -186,13 +202,17 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                 ])
                 .exchange()
                 .expectStatus().isEqualTo(409)
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("SUBMISSION_UPDATE_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "SUBMISSION_UPDATE_ERROR"
     }
 
     def "should return 404 when updating an unknown submission"() {
-        expect:
-        authenticatedPut("/api/submission/sub_missing", "BUSINESS_ADMIN")
+        when:
+        def result = authenticatedPut("/api/submission/sub_missing", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         clientName  : "Anna Nowak",
@@ -202,6 +222,12 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
                 ])
                 .exchange()
                 .expectStatus().isNotFound()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "SUBMISSION_NOT_FOUND"
     }
 
     def "should close an OPEN submission, returning 202 and status DONE"() {
@@ -210,12 +236,14 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = authenticatedPut("/api/submission/sub_close/close", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isEqualTo(202)
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isEqualTo(202)
-                .expectBody()
-                .jsonPath('$.status').isEqualTo("DONE")
-                .jsonPath('$.remainingSeconds').isEqualTo(0)
+        result.status == "DONE"
+        result.remainingSeconds == 0
 
         and:
         def saved = mongoTemplate.findAll(SubmissionDocument).collectList().block()
@@ -224,11 +252,15 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
     }
 
     def "should return 404 when closing an unknown submission"() {
-        expect:
-        authenticatedPut("/api/submission/sub_missing/close", "BUSINESS_ADMIN").exchange()
+        when:
+        def result = authenticatedPut("/api/submission/sub_missing/close", "BUSINESS_ADMIN").exchange()
                 .expectStatus().isNotFound()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("SUBMISSION_NOT_FOUND")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "SUBMISSION_NOT_FOUND"
     }
 
     def "should delete an OPEN submission, returning 202"() {
@@ -236,12 +268,10 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         seedSubmission("sub_delete", SubmissionStatus.OPEN)
 
         when:
-        def result = authenticatedDelete("/api/submission/sub_delete", "BUSINESS_ADMIN").exchange()
+        authenticatedDelete("/api/submission/sub_delete", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isEqualTo(202)
 
         then:
-        result.expectStatus().isEqualTo(202)
-
-        and:
         mongoTemplate.findAll(SubmissionDocument).collectList().block().isEmpty()
     }
 
@@ -249,35 +279,43 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         given:
         seedSubmission("sub_delete_done", SubmissionStatus.DONE)
 
-        expect:
-        authenticatedDelete("/api/submission/sub_delete_done", "BUSINESS_ADMIN").exchange()
+        when:
+        def result = authenticatedDelete("/api/submission/sub_delete_done", "BUSINESS_ADMIN").exchange()
                 .expectStatus().isEqualTo(409)
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("SUBMISSION_DELETE_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "SUBMISSION_DELETE_ERROR"
 
         and: "the document is still present"
         mongoTemplate.findAll(SubmissionDocument).collectList().block().size() == 1
     }
 
     def "should treat deleting an unknown submission as a no-op returning 202"() {
-        expect:
-        authenticatedDelete("/api/submission/sub_missing", "BUSINESS_ADMIN").exchange()
-                .expectStatus().isEqualTo(202)
+        when:
+        def response = authenticatedDelete("/api/submission/sub_missing", "BUSINESS_ADMIN").exchange()
+
+        then:
+        response.expectStatus().isEqualTo(202)
     }
 
     def "should return 401 for GET /api/submission without a token"() {
-        expect:
-        webTestClient.get().uri("/api/submission")
-                .exchange()
-                .expectStatus().isUnauthorized()
+        when:
+        def response = webTestClient.get().uri("/api/submission").exchange()
+
+        then:
+        response.expectStatus().isUnauthorized()
     }
 
     @Unroll
     def "should map role #role to status #status on the submission endpoints"() {
-        expect:
-        authenticatedGet("/api/submission", role)
-                .exchange()
-                .expectStatus().isEqualTo(status)
+        when:
+        def response = authenticatedGet("/api/submission", role).exchange()
+
+        then:
+        response.expectStatus().isEqualTo(status)
 
         where:
         role              | status

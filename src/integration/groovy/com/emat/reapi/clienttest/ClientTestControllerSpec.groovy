@@ -102,23 +102,27 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
 
         when:
         def result = webTestClient.get().uri("/api/client/test/pt_valid").exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        result.expectStatus().isOk()
-                .expectBody()
-                .jsonPath('$.publicToken').isEqualTo("pt_valid")
-                .jsonPath('$.submissionId').isEqualTo("sub_get-1")
-                .jsonPath('$.testName').isEqualTo("Test fpt_get-1")
-                .jsonPath('$.clientQuestions.length()').isEqualTo(2)
-                .jsonPath('$.clientQuestions[0].statementKey').exists()
-                .jsonPath('$.clientQuestions[0].supportingStatement').exists()
-                .jsonPath('$.clientQuestions[0].limitingStatement').exists()
+        result.publicToken == "pt_valid"
+        result.submissionId == "sub_get-1"
+        result.testName == "Test fpt_get-1"
+        result.clientQuestions.size() == 2
+        result.clientQuestions[0].statementKey != null
+        result.clientQuestions[0].supportingStatement != null
+        result.clientQuestions[0].limitingStatement != null
     }
 
     def "should return 404 for an unknown public token"() {
-        expect:
-        webTestClient.get().uri("/api/client/test/pt_missing").exchange()
-                .expectStatus().isNotFound()
+        when:
+        def response = webTestClient.get().uri("/api/client/test/pt_missing").exchange()
+
+        then:
+        response.expectStatus().isNotFound()
     }
 
     def "should return 404 for a DONE submission token"() {
@@ -127,9 +131,11 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_done", ["p1_q1"])
         seedSubmission("sub_done", "fpt_done", "pt_done-token", SubmissionStatus.DONE)
 
-        expect:
-        webTestClient.get().uri("/api/client/test/pt_done-token").exchange()
-                .expectStatus().isNotFound()
+        when:
+        def response = webTestClient.get().uri("/api/client/test/pt_done-token").exchange()
+
+        then:
+        response.expectStatus().isNotFound()
     }
 
     def "should return 404 for an expired submission token"() {
@@ -139,15 +145,19 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         seedSubmission("sub_expired", "fpt_expired", "pt_expired-token",
                 SubmissionStatus.OPEN, Instant.now().minusSeconds(60))
 
-        expect:
-        webTestClient.get().uri("/api/client/test/pt_expired-token").exchange()
-                .expectStatus().isNotFound()
+        when:
+        def response = webTestClient.get().uri("/api/client/test/pt_expired-token").exchange()
+
+        then:
+        response.expectStatus().isNotFound()
     }
 
-    def "GET /api/client/test/{token} is public — missing token returns 404 not 401"() {
-        expect:
-        webTestClient.get().uri("/api/client/test/pt_no-auth").exchange()
-                .expectStatus().isNotFound()
+    def "should return 404 (not 401) for a missing token since the endpoint is public"() {
+        when:
+        def response = webTestClient.get().uri("/api/client/test/pt_no-auth").exchange()
+
+        then:
+        response.expectStatus().isNotFound()
     }
 
     // ---- POST /api/client/test ----
@@ -161,7 +171,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         seedSubmission("sub_post-1", "fpt_post-1", "pt_post-token")
 
         when:
-        def result = webTestClient.post().uri("/api/client/test")
+        webTestClient.post().uri("/api/client/test")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         submissionId     : "sub_post-1",
@@ -172,11 +182,9 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
                         ]
                 ])
                 .exchange()
+                .expectStatus().isCreated()
 
-        then: "201 no body"
-        result.expectStatus().isCreated()
-
-        and: "submission closed"
+        then: "submission closed"
         def sub = mongoTemplate.findAll(SubmissionDocument).collectList().block()
         sub.find { it.submissionId == "sub_post-1" }.status == SubmissionStatus.DONE
 
@@ -191,8 +199,8 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_token-mismatch", ["p1_q1"])
         seedSubmission("sub_token-mismatch", "fpt_token-mismatch", "pt_real-token")
 
-        expect:
-        webTestClient.post().uri("/api/client/test")
+        when:
+        def response = webTestClient.post().uri("/api/client/test")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         submissionId     : "sub_token-mismatch",
@@ -200,7 +208,9 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
                         clientTestAnswers: [[statementKey: "p1_q1", scoring: 1]]
                 ])
                 .exchange()
-                .expectStatus().isBadRequest()
+
+        then:
+        response.expectStatus().isBadRequest()
     }
 
     def "should return 400 when number of answers does not match test size"() {
@@ -211,8 +221,8 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_size-mismatch", ["p1_q1", "p1_q2"])
         seedSubmission("sub_size-mismatch", "fpt_size-mismatch", "pt_size-token")
 
-        expect: "test has 2 statements but only 1 answer provided"
-        webTestClient.post().uri("/api/client/test")
+        when: "test has 2 statements but only 1 answer provided"
+        def response = webTestClient.post().uri("/api/client/test")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         submissionId     : "sub_size-mismatch",
@@ -220,7 +230,9 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
                         clientTestAnswers: [[statementKey: "p1_q1", scoring: 1]]
                 ])
                 .exchange()
-                .expectStatus().isBadRequest()
+
+        then:
+        response.expectStatus().isBadRequest()
     }
 
     def "should return 404 when answer contains an unknown statementKey"() {
@@ -230,8 +242,8 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         seedFpTest("fpt_bad-key", ["p1_q1"])
         seedSubmission("sub_bad-key", "fpt_bad-key", "pt_bad-key-token")
 
-        expect:
-        webTestClient.post().uri("/api/client/test")
+        when:
+        def response = webTestClient.post().uri("/api/client/test")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         submissionId     : "sub_bad-key",
@@ -239,12 +251,14 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
                         clientTestAnswers: [[statementKey: "p1_NONEXISTENT", scoring: 1]]
                 ])
                 .exchange()
-                .expectStatus().isNotFound()
+
+        then:
+        response.expectStatus().isNotFound()
     }
 
     def "should return 404 when submissionId does not exist"() {
-        expect:
-        webTestClient.post().uri("/api/client/test")
+        when:
+        def response = webTestClient.post().uri("/api/client/test")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         submissionId     : "sub_missing",
@@ -252,12 +266,14 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
                         clientTestAnswers: [[statementKey: "p1_q1", scoring: 1]]
                 ])
                 .exchange()
-                .expectStatus().isNotFound()
+
+        then:
+        response.expectStatus().isNotFound()
     }
 
     def "should return 400 VALIDATION_ERROR for blank submissionId"() {
-        expect:
-        webTestClient.post().uri("/api/client/test")
+        when:
+        def result = webTestClient.post().uri("/api/client/test")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         submissionId     : "",
@@ -266,19 +282,23 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
                 ])
                 .exchange()
                 .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath('$.code').isEqualTo("VALIDATION_ERROR")
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "VALIDATION_ERROR"
     }
 
-    def "POST /api/client/test is public — no auth header required"() {
+    def "should accept a public POST without an auth header"() {
         given:
         stubN8nOk()
         seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
         seedFpTest("fpt_public", ["p1_q1"])
         seedSubmission("sub_public", "fpt_public", "pt_public-token")
 
-        expect:
-        webTestClient.post().uri("/api/client/test")
+        when:
+        def response = webTestClient.post().uri("/api/client/test")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue([
                         submissionId     : "sub_public",
@@ -286,7 +306,9 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
                         clientTestAnswers: [[statementKey: "p1_q1", scoring: 2]]
                 ])
                 .exchange()
-                .expectStatus().isCreated()
+
+        then:
+        response.expectStatus().isCreated()
     }
 
     // ---- E2E ----
@@ -303,7 +325,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         def test = webTestClient.get().uri("/api/client/test/pt_e2e-token")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(Map.class)
+                .expectBody(Map)
                 .returnResult()
                 .responseBody
 

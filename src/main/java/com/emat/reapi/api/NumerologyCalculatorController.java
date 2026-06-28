@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -31,10 +33,12 @@ public class NumerologyCalculatorController {
     @PostMapping("/phrase")
     @ResponseStatus(HttpStatus.OK)
     public Mono<PhraseCalculatorResponse> calculatePhrase(
-            @Valid @RequestBody NCalculatorPhraseDto request
+            @Valid @RequestBody NCalculatorPhraseDto request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        log.info("Received request: POST '/api/ncalculator/phrase' with phrase='{}'", request.phrase());
-        return nCalculatorService.calculatePhrase(request.phrase())
+        String userName = resolveUserName(jwt);
+        log.info("Received request: POST '/api/ncalculator/phrase' with phrase='{}' by user='{}'", request.phrase(), userName);
+        return nCalculatorService.calculatePhrase(request.phrase(), userName)
                 .map(PhraseCalculatorResponse::fromDomain);
     }
 
@@ -46,11 +50,25 @@ public class NumerologyCalculatorController {
     @PostMapping("/dates")
     @ResponseStatus(HttpStatus.OK)
     public Mono<DatesCalculatorResponse> calculatePhrase(
-            @Valid @RequestBody NCalculatorDateDto request
+            @Valid @RequestBody NCalculatorDateDto request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        log.info("Received request: POST '/api/ncalculator/dates' with birthDate:{}, reference date:{}.",
-                request.birthDate(), request.referenceDate());
-        return nCalculatorService.calculateDates(request.birthDate(), request.referenceDate())
+        String userName = resolveUserName(jwt);
+        log.info("Received request: POST '/api/ncalculator/dates' with birthDate:{}, reference date:{} by user='{}'.",
+                request.birthDate(), request.referenceDate(), userName);
+        return nCalculatorService.calculateDates(request.birthDate(), request.referenceDate(), userName)
                 .map(DatesCalculatorResponse::fromDomain);
+    }
+
+    /**
+     * Resolves the human-readable user name from the Keycloak-validated JWT,
+     * preferring {@code preferred_username} and falling back to the subject id.
+     */
+    private static String resolveUserName(Jwt jwt) {
+        if (jwt == null) {
+            return null;
+        }
+        String preferred = jwt.getClaimAsString("preferred_username");
+        return (preferred != null && !preferred.isBlank()) ? preferred : jwt.getSubject();
     }
 }

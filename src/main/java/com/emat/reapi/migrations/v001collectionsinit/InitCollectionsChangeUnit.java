@@ -5,6 +5,7 @@ import com.emat.reapi.numerologycalculator.infra.NumerologyDateCalculatorDocumen
 import com.emat.reapi.numerologycalculator.infra.NumerologyPhaseCalculatorDocument;
 import com.emat.reapi.profileanalysis.infra.InsightReportDocument;
 import com.emat.reapi.profileanalysis.infra.ReportJobDocument;
+import com.emat.reapi.statement.infra.ProfileDocument;
 import com.emat.reapi.statement.infra.StatementDefinitionDocument;
 import io.mongock.api.annotations.*;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,7 @@ public class InitCollectionsChangeUnit {
         initNumerologyPhaseCalculatorCollection();
         initInsightReportCollection();
         initStatementDefinitionCollection();
+        initProfileCollection();
     }
 
     @Execution
@@ -95,6 +97,16 @@ public class InitCollectionsChangeUnit {
                 StatementDefinitionDocument.class
         );
         log.info("Initialized collection: {}", StatementDefinitionDocument.COLLECTION_NAME);
+    }
+
+    private void initProfileCollection() {
+        CollectionInitializer.initializeCollection(
+                mongoTemplate,
+                mongoMappingContext,
+                ProfileDocument.COLLECTION_NAME,
+                ProfileDocument.class
+        );
+        log.info("Initialized collection: {}", ProfileDocument.COLLECTION_NAME);
     }
 
 }

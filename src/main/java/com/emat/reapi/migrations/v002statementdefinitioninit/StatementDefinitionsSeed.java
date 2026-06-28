@@ -278,7 +278,7 @@ public class StatementDefinitionsSeed {
                                            String limiting, String supporting) {
         return new StatementDefinition(
                 id,
-                profile,
+                profile.toProfileId(),
                 key,
                 List.of(
                         new StatementTypeDefinition(StatementType.LIMITING, limiting),

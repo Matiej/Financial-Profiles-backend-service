@@ -67,6 +67,16 @@ public enum StatementProfile {
         return plName;
     }
 
+    // Transitional bridge between the enum and the new String profileId (removed in F6,
+    // once the enum is gone). Slug "profil_1" <-> enum PROFIL_1.
+    public String toProfileId() {
+        return name().toLowerCase();
+    }
+
+    public static StatementProfile fromProfileId(String profileId) {
+        return valueOf(profileId.toUpperCase());
+    }
+
     public String computeLabel(double percent) {
         if (percent <= 0) return blockingName;
         if (percent < 68) return transitionalName;

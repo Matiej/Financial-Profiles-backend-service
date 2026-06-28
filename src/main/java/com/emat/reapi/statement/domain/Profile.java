@@ -7,9 +7,9 @@ import lombok.Data;
 import java.time.Instant;
 
 /**
- * Edytowalny profil (zastępuje sztywny enum {@link StatementProfile}).
- * Identyfikacja po niezmiennym {@code id}; labele/order edytowalne.
- * Progi etykiet (0/68) są globalne (config) — nie trzymamy ich tutaj.
+ * Editable profile (replaces the fixed {@link StatementProfile} enum).
+ * Identified by an immutable {@code id}; labels/order are editable.
+ * Label thresholds (0/68) are global (config) — not stored here.
  */
 @Data
 @Builder

@@ -13,13 +13,8 @@ import java.time.Instant
  * before any refactor.
  *
  * Notable behaviors pinned here:
- *  - {@code GET /api/profiler} and {@code GET /api/profiler/{submissionId}} are
- *    Tally-based (read from the {@code clienttalytest} domain). They are included
- *    here only as structural smoke tests — both endpoints are planned for removal
- *    with the Tally refactor.
  *  - {@code GET /api/profiler/scoring} and {@code GET /api/profiler/{id}/scoring}
- *    read from {@code ClientTestDocument} (the FpTest-based flow) and are the
- *    primary targets of these tests.
+ *    read from {@code ClientTestDocument} (the FpTest-based flow).
  *  - Profile blocks are sorted ascending by {@code totalScore}; the block with the
  *    lowest score appears first.
  *  - {@code scorePercent} formula: {@code totalScore / (totalAnswers * 2) * 100}.
@@ -65,28 +60,6 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
                 "wspierajace " + questionKey,
                 scoring
         )
-    }
-
-    // ---- GET /api/profiler — Tally-based (smoke only, planned for removal) ----
-
-    def "should return 200 with an empty list when no Tally data exists"() {
-        when:
-        def result = authenticatedGet("/api/profiler", "BUSINESS_ADMIN").exchange()
-                .expectStatus().isOk()
-                .expectBodyList(Map)
-                .returnResult()
-                .responseBody
-
-        then:
-        result.isEmpty()
-    }
-
-    def "should return 404 for an unknown Tally submissionId"() {
-        when:
-        def response = authenticatedGet("/api/profiler/sub_tally_missing", "BUSINESS_ADMIN").exchange()
-
-        then:
-        response.expectStatus().isNotFound()
     }
 
     // ---- GET /api/profiler/scoring — short list of all ClientTest results ----

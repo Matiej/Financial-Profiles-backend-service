@@ -6,5 +6,6 @@ import reactor.core.publisher.Mono;
 
 public interface ClientTestSubmissionService {
     Mono<ClientTestSubmission> findClientTestByTestSubmissionId(String submissionId);
+    Mono<ClientTestSubmission> findBySubmissionId(String submissionId);
     Flux<ClientTestSubmission> findAll();
 }

@@ -6,8 +6,8 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Seed 8 startowych profili (przeniesione z usuwanego enuma StatementProfile).
- * Id = stabilny slug "profil_1".."profil_8" — referencja dla definicji (F3+).
+ * Seeds the 8 initial profiles (carried over from the StatementProfile enum being removed).
+ * Id = stable slug "profil_1".."profil_8" — referenced by definitions (F3+).
  */
 public class ProfilesSeed {
 

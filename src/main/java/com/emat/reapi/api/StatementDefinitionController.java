@@ -1,7 +1,6 @@
 package com.emat.reapi.api;
 
 import com.emat.reapi.api.dto.statement.StatementDefinitionDto;
-import com.emat.reapi.statement.domain.StatementProfile;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.port.StatementDefinitionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,17 +57,17 @@ public class StatementDefinitionController {
     }
 
     @Operation(
-            summary = "Get statement definitions by category",
-            description = "Retrieves fistStatement definitions filtered by category",
+            summary = "Get statement definitions by profile",
+            description = "Retrieves fistStatement definitions filtered by profileId",
             responses = @ApiResponse(responseCode = "200", description = "List retrieved successfully")
     )
-    @GetMapping(value = "/category", params = "category")
-    public Flux<StatementDefinitionDto> getStatementsByCategory(
-            @Parameter(description = "Category to filter definitions")
-            @RequestParam StatementProfile category
+    @GetMapping(params = "profileId")
+    public Flux<StatementDefinitionDto> getStatementsByProfileId(
+            @Parameter(description = "Profile id to filter definitions")
+            @RequestParam String profileId
     ) {
-        log.info("received request: GET /api/statement/statements with 'category': {}", category);
-        return statementService.getStatementDefinitionsByCategory(category)
+        log.info("received request: GET /api/definition with 'profileId': {}", profileId);
+        return statementService.getStatementDefinitionsByProfileId(profileId)
                 .map(StatementDefinitionDto::toDto);
     }
 

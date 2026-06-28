@@ -17,11 +17,8 @@ import java.time.Instant
  * Characterization tests pinning the CURRENT behavior of
  * {@code ProfileAnalysisReportController} before any refactor.
  *
- * Scope note — the full happy path (enqueue → OpenAI → DONE) is intentionally NOT
- * covered here: the async pipeline reads the client profile from the Tally-based
- * {@code ProfiledService.getClientProfiledStatement}, which is slated for removal.
- * Exercising it would require seeding throwaway Tally data plus a WireMock OpenAI
- * stub and polling a fire-and-forget {@code .subscribe()}. Instead we pin the
+ * Scope note — the full happy path (enqueue → OpenAI → DONE) is covered separately in
+ * {@code ProfileAnalysisAiFlowSpec} (WireMock OpenAI + polling). Here we pin the
  * deterministic, synchronous behaviors by seeding {@code ReportJobDocument} and
  * {@code InsightReportDocument} directly.
  *
@@ -30,7 +27,7 @@ import java.time.Instant
  *    enqueue persists the initial job (status PENDING) SYNCHRONOUSLY as part of the
  *    request, so the job is in the DB before 202 returns — that is why the test can
  *    find it. The analysis itself then runs async (fire-and-forget) and may already
- *    have flipped PENDING→RUNNING (and, with no Tally data, on to FAILED), so we
+ *    have flipped PENDING→RUNNING (and, with no client test seeded, on to FAILED), so we
  *    assert the job's existence and uniqueness, never its persisted status.
  *  - {@code GET /{submissionId}/status} returns 200 with the job status DTO, or
  *    204 No Content when no job exists.

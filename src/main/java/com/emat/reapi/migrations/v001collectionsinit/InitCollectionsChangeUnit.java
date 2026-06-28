@@ -1,6 +1,5 @@
 package com.emat.reapi.migrations.v001collectionsinit;
 
-import com.emat.reapi.clienttalytest.infra.ClientAnswerDocument;
 import com.emat.reapi.migrations.CollectionInitializer;
 import com.emat.reapi.ncalculator.infra.NumerologyDateCalculatorDocument;
 import com.emat.reapi.ncalculator.infra.NumerologyPhaseCalculatorDocument;
@@ -27,7 +26,6 @@ public class InitCollectionsChangeUnit {
     @BeforeExecution
     public void beforeExecution() {
         initReportJobCollection();
-        initClientAnswerCollection();
         initNumerologyDateCalculatorCollection();
         initNumerologyPhaseCalculatorCollection();
         initInsightReportCollection();
@@ -57,16 +55,6 @@ public class InitCollectionsChangeUnit {
                 ReportJobDocument.class
         );
         log.info("Initialized collection: {}", ReportJobDocument.COLLECTION_NAME);
-    }
-
-    private void initClientAnswerCollection() {
-        CollectionInitializer.initializeCollection(
-                mongoTemplate,
-                mongoMappingContext,
-                ClientAnswerDocument.COLLECTION_NAME,
-                ClientAnswerDocument.class
-        );
-        log.info("Initialized collection: {}", ClientAnswerDocument.COLLECTION_NAME);
     }
 
     private void initNumerologyDateCalculatorCollection() {

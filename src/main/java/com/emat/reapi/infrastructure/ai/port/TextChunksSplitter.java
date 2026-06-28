@@ -1,4 +1,4 @@
-package com.emat.reapi.ai.port;
+package com.emat.reapi.infrastructure.ai.port;
 
 import org.springframework.stereotype.Component;
 

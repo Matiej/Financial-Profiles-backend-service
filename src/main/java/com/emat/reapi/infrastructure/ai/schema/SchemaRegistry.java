@@ -1,4 +1,4 @@
-package com.emat.reapi.ai.schema;
+package com.emat.reapi.infrastructure.ai.schema;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;

@@ -1,7 +1,7 @@
 package com.emat.reapi.submission;
 
-import com.emat.reapi.api.dto.SubmissionDto;
-import com.emat.reapi.api.dto.SubmissionUpdateDto;
+import com.emat.reapi.api.dto.submission.SubmissionDto;
+import com.emat.reapi.api.dto.submission.SubmissionUpdateDto;
 import com.emat.reapi.submission.domain.Submission;
 import com.emat.reapi.submission.domain.SubmissionStatus;
 import reactor.core.publisher.Flux;

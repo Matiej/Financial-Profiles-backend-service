@@ -1,6 +1,6 @@
 package com.emat.reapi.api.dto.ncalculator;
 
-import com.emat.reapi.ncalculator.domain.NumerologyPhraseCalculator;
+import com.emat.reapi.numerologycalculator.domain.NumerologyPhraseCalculator;
 
 public record PhraseCalculatorResponse(
         String vowelsResult,

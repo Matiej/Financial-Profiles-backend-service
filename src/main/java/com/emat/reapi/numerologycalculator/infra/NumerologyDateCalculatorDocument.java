@@ -1,4 +1,4 @@
-package com.emat.reapi.ncalculator.infra;
+package com.emat.reapi.numerologycalculator.infra;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

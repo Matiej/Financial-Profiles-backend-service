@@ -1,6 +1,6 @@
 package com.emat.reapi.profileanalysis;
 
-import com.emat.reapi.api.dto.InsightReportDto.ReportJobStatusDto;
+import com.emat.reapi.api.dto.insightreport.ReportJobStatusDto;
 import com.emat.reapi.profileanalysis.domain.InsightReport;
 import com.emat.reapi.profileanalysis.domain.PayloadMode;
 import com.emat.reapi.profileanalysis.domain.reportjob.ReportJob;

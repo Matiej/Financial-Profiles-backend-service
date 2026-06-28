@@ -1,4 +1,4 @@
-package com.emat.reapi.ai.validator;
+package com.emat.reapi.infrastructure.ai.validator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

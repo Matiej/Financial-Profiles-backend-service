@@ -1,4 +1,4 @@
-package com.emat.reapi.ncalculator.domain;
+package com.emat.reapi.numerologycalculator.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

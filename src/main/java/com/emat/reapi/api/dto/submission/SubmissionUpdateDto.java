@@ -1,4 +1,4 @@
-package com.emat.reapi.api.dto;
+package com.emat.reapi.api.dto.submission;
 
 import jakarta.validation.constraints.*;
 

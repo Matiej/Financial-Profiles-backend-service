@@ -1,4 +1,4 @@
-package com.emat.reapi.api.dto;
+package com.emat.reapi.api.dto.statement;
 
 
 import com.emat.reapi.statement.domain.StatementProfile;

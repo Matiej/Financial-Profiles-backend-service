@@ -9,7 +9,6 @@ import java.util.List;
 
 public interface ProfiledService {
 
-    Mono<ProfiledClientAnswerDetails> getClientProfiledStatements(String clientId);
     Mono<ProfiledClientAnswerDetails> getClientProfiledStatement(String submissionId);
     Mono<List<ProfiledClientAnswerShort>> getProfiledShort(Sort sort);
 }

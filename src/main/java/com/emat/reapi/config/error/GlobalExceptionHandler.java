@@ -1,4 +1,4 @@
-package com.emat.reapi.global.error;
+package com.emat.reapi.config.error;
 
 import com.emat.reapi.clienttest.ClientTestException;
 import com.emat.reapi.fptest.FpTestStateException;

@@ -29,12 +29,6 @@ class ProfiledServiceImpl implements ProfiledService {
     private final InsightReportRepository reportRepository;
 
     @Override
-    public Mono<ProfiledClientAnswerDetails> getClientProfiledStatements(String clientId) {
-        return clientAnswerService.getAnsweredStatementByClientId(clientId)
-                .map(this::mapToProfiledClientAnswer);
-    }
-
-    @Override
     public Mono<ProfiledClientAnswerDetails> getClientProfiledStatement(String submissionId) {
         return clientAnswerService.getAnsweredStatementBySubmissionId(submissionId)
                 .map(this::mapToProfiledClientAnswer)

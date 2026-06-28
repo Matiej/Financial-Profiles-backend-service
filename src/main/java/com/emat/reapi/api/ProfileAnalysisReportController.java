@@ -1,9 +1,9 @@
 package com.emat.reapi.api;
 
 
-import com.emat.reapi.api.dto.InsightReportDto.InsightReportDto;
-import com.emat.reapi.api.dto.InsightReportDto.InsightReportMapper;
-import com.emat.reapi.api.dto.InsightReportDto.ReportJobStatusDto;
+import com.emat.reapi.api.dto.insightreport.InsightReportDto;
+import com.emat.reapi.api.dto.insightreport.InsightReportMapper;
+import com.emat.reapi.api.dto.insightreport.ReportJobStatusDto;
 import com.emat.reapi.profileanalysis.ProfileAnalysisService;
 import com.emat.reapi.profileanalysis.domain.PayloadMode;
 import io.swagger.v3.oas.annotations.Operation;

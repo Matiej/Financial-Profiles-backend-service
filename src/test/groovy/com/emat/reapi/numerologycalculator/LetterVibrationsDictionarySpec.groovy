@@ -1,6 +1,6 @@
-package com.emat.reapi.ncalculator
+package com.emat.reapi.numerologycalculator
 
-import com.emat.reapi.ncalculator.domain.LetterVibrationsDictionary
+import com.emat.reapi.numerologycalculator.domain.LetterVibrationsDictionary
 import spock.lang.Specification
 import spock.lang.Unroll
 

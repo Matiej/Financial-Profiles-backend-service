@@ -1,4 +1,4 @@
-package com.emat.reapi.api.dto;
+package com.emat.reapi.api.dto.submission;
 
 import com.emat.reapi.submission.domain.Submission;
 import com.emat.reapi.submission.domain.SubmissionStatus;

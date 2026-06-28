@@ -1,6 +1,6 @@
-package com.emat.reapi.ai.configuration;
+package com.emat.reapi.infrastructure.ai.configuration;
 
-import com.emat.reapi.ai.integration.OpenAiClientFactory;
+import com.emat.reapi.infrastructure.ai.integration.OpenAiClientFactory;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;

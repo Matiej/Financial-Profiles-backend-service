@@ -1,8 +1,8 @@
-package com.emat.reapi.ncalculator
+package com.emat.reapi.numerologycalculator
 
 import com.emat.reapi.BaseIntegrationSpec
-import com.emat.reapi.ncalculator.infra.NumerologyDateCalculatorDocument
-import com.emat.reapi.ncalculator.infra.NumerologyPhaseCalculatorDocument
+import com.emat.reapi.numerologycalculator.infra.NumerologyDateCalculatorDocument
+import com.emat.reapi.numerologycalculator.infra.NumerologyPhaseCalculatorDocument
 import org.springframework.http.MediaType
 import spock.lang.Unroll
 

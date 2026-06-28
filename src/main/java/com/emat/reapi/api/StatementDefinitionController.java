@@ -1,6 +1,6 @@
 package com.emat.reapi.api;
 
-import com.emat.reapi.api.dto.StatementDefinitionDto;
+import com.emat.reapi.api.dto.statement.StatementDefinitionDto;
 import com.emat.reapi.statement.domain.StatementProfile;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.port.StatementDefinitionService;

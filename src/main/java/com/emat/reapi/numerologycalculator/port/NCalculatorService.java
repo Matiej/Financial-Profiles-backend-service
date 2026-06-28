@@ -1,7 +1,7 @@
-package com.emat.reapi.ncalculator.port;
+package com.emat.reapi.numerologycalculator.port;
 
-import com.emat.reapi.ncalculator.domain.NumerologyDatesCalculator;
-import com.emat.reapi.ncalculator.domain.NumerologyPhraseCalculator;
+import com.emat.reapi.numerologycalculator.domain.NumerologyDatesCalculator;
+import com.emat.reapi.numerologycalculator.domain.NumerologyPhraseCalculator;
 import reactor.core.publisher.Mono;
 
 public interface NCalculatorService {

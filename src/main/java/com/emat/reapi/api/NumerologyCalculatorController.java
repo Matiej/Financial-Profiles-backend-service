@@ -4,7 +4,7 @@ import com.emat.reapi.api.dto.ncalculator.DatesCalculatorResponse;
 import com.emat.reapi.api.dto.ncalculator.NCalculatorDateDto;
 import com.emat.reapi.api.dto.ncalculator.NCalculatorPhraseDto;
 import com.emat.reapi.api.dto.ncalculator.PhraseCalculatorResponse;
-import com.emat.reapi.ncalculator.port.NCalculatorService;
+import com.emat.reapi.numerologycalculator.port.NCalculatorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;

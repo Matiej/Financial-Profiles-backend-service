@@ -1,6 +1,6 @@
-package com.emat.reapi.ai.integration;
+package com.emat.reapi.infrastructure.ai.integration;
 
-import com.emat.reapi.ai.configuration.OpenAiParams;
+import com.emat.reapi.infrastructure.ai.configuration.OpenAiParams;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.openai.*;

@@ -10,9 +10,6 @@ spring:
 mongock:
   enabled: false
 
-tally:
-  signing-secret: tally-test-secret
-
 app:
   version: 0.0.1-TEST
   name: profiler-service-test

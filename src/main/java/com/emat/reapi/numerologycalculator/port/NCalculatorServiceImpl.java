@@ -1,10 +1,10 @@
-package com.emat.reapi.ncalculator.port;
+package com.emat.reapi.numerologycalculator.port;
 
-import com.emat.reapi.ncalculator.domain.*;
-import com.emat.reapi.ncalculator.infra.NumerologyDateCalculatorDocument;
-import com.emat.reapi.ncalculator.infra.NumerologyDateCalculatorRepository;
-import com.emat.reapi.ncalculator.infra.NumerologyPhaseCalculatorDocument;
-import com.emat.reapi.ncalculator.infra.NumerologyPhaseCalculatorRepository;
+import com.emat.reapi.numerologycalculator.domain.*;
+import com.emat.reapi.numerologycalculator.infra.NumerologyDateCalculatorDocument;
+import com.emat.reapi.numerologycalculator.infra.NumerologyDateCalculatorRepository;
+import com.emat.reapi.numerologycalculator.infra.NumerologyPhaseCalculatorDocument;
+import com.emat.reapi.numerologycalculator.infra.NumerologyPhaseCalculatorRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

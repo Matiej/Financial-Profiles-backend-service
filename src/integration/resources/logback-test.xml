@@ -11,5 +11,5 @@
     </root>
 
     <logger name="org.springframework.web.reactive.function.client" level="WARN"/>
-    <logger name="com.emat.reapi.ai.configuration" level="DEBUG"/>
+    <logger name="com.emat.reapi.infrastructure.ai.configuration" level="DEBUG"/>
 </configuration>

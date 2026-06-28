@@ -1,8 +1,8 @@
-package com.emat.reapi.ai.port;
+package com.emat.reapi.infrastructure.ai.port;
 
-import com.emat.reapi.ai.integration.OpenAiClientFactory;
-import com.emat.reapi.ai.schema.SchemaRegistry;
-import com.emat.reapi.ai.validator.SchemaJsonValidator;
+import com.emat.reapi.infrastructure.ai.integration.OpenAiClientFactory;
+import com.emat.reapi.infrastructure.ai.schema.SchemaRegistry;
+import com.emat.reapi.infrastructure.ai.validator.SchemaJsonValidator;
 import com.emat.reapi.profileanalysis.domain.InsightReportAiResponse;
 import com.emat.reapi.profileanalysis.domain.InsightReportStructuredAiResponse;
 import com.emat.reapi.profileanalysis.domain.MinimizedPayload;

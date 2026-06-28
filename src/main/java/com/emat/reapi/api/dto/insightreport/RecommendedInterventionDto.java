@@ -1,4 +1,4 @@
-package com.emat.reapi.api.dto.InsightReportDto;
+package com.emat.reapi.api.dto.insightreport;
 
 public record RecommendedInterventionDto(
         String type,

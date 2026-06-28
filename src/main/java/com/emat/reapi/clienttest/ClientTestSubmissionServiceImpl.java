@@ -24,6 +24,14 @@ public class ClientTestSubmissionServiceImpl implements ClientTestSubmissionServ
     }
 
     @Override
+    public Mono<ClientTestSubmission> findBySubmissionId(String submissionId) {
+        log.info("Retrieving ClientTestSubmission by submissionId: {}.", submissionId);
+        return clientTestRepository.findBySubmissionId(submissionId)
+                .map(ClientTestDocument::toDomain)
+                .doOnSuccess(suc -> log.info("Successfully fetched ClientTestDocument for submissionId: {}", submissionId));
+    }
+
+    @Override
     public Flux<ClientTestSubmission> findAll() {
         log.info("Retrieving all ClientTestSubmissiona ");
         return clientTestRepository.findAll()

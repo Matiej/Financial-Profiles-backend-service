@@ -1,13 +1,13 @@
 package com.emat.reapi.profileanalysis;
 
-import com.emat.reapi.api.dto.InsightReportDto.ReportJobStatusDto;
+import com.emat.reapi.api.dto.insightreport.ReportJobStatusDto;
+import com.emat.reapi.clienttest.ClientTestSubmissionService;
 import com.emat.reapi.profileanalysis.domain.InsightReport;
 import com.emat.reapi.profileanalysis.domain.PayloadMode;
 import com.emat.reapi.profileanalysis.domain.reportjob.ReportJob;
 import com.emat.reapi.profileanalysis.domain.reportjob.ReportJobStatus;
 import com.emat.reapi.profileanalysis.infra.InsightReportDocument;
 import com.emat.reapi.profileanalysis.infra.InsightReportRepository;
-import com.emat.reapi.profiler.port.ProfiledService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,7 +31,7 @@ public class ProfileAnalysisServiceImpl implements ProfileAnalysisService {
     private final InsightReportRepository reportRepository;
     private final ReportJobService reportJobService;
     private final ProfileAiAnalysisProcessor profileAiAnalysisProcessor;
-    private final ProfiledService profiledService;
+    private final ClientTestSubmissionService clientTestSubmissionService;
 
     @Override
     public Mono<Void> saveReport(InsightReport insightReport) {
@@ -102,7 +102,11 @@ public class ProfileAnalysisServiceImpl implements ProfileAnalysisService {
                         ReportJobStatus.RUNNING,
                         null,
                         null))
-                .then(profiledService.getClientProfiledStatement(submissionId))
+                .then(clientTestSubmissionService.findBySubmissionId(submissionId)
+                        .map(ClientTestProfiledMapper::toProfiled)
+                        .switchIfEmpty(Mono.error(new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "No client test found for submissionId=" + submissionId))))
                 .doOnSubscribe(s -> log.info("AI analysis START: submissionId={}, mode={}, retry={}",
                         submissionId,
                         mode,

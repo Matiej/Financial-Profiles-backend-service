@@ -14,8 +14,9 @@ import java.time.Instant
 /**
  * Pure-logic unit tests for {@code MinimizerServiceImpl}. No Spring, no DB.
  *
- * This logic feeds the AI payload and is not exercised by any integration test
- * (the AI/analysis flow is Tally-based and intentionally untested end-to-end).
+ * This logic feeds the AI payload. The end-to-end flow is covered by
+ * {@code ProfileAnalysisAiFlowSpec}; here we pin the minimizer rules and edge cases
+ * in isolation.
  *
  * Pinned behaviors:
  *  - per-type caps by mode: FULL = all, MINIMAL = 2, ENRICHED = 4 for the worst K=2

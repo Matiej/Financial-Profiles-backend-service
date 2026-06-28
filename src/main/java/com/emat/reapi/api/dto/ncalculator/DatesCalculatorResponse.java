@@ -1,6 +1,6 @@
 package com.emat.reapi.api.dto.ncalculator;
 
-import com.emat.reapi.ncalculator.domain.NumerologyDatesCalculator;
+import com.emat.reapi.numerologycalculator.domain.NumerologyDatesCalculator;
 
 public record DatesCalculatorResponse(
         String mainVibration,

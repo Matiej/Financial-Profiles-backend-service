@@ -1,4 +1,4 @@
-package com.emat.reapi.global;
+package com.emat.reapi.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package com.emat.reapi.global;
+package com.emat.reapi.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

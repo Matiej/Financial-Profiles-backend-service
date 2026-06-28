@@ -1,4 +1,4 @@
-package com.emat.reapi.global.error;
+package com.emat.reapi.config.error;
 
 import java.time.Instant;
 import java.util.Map;

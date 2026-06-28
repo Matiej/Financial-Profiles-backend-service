@@ -1,4 +1,4 @@
-package com.emat.reapi.global;
+package com.emat.reapi.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

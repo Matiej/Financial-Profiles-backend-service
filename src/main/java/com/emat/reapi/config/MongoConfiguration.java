@@ -1,4 +1,4 @@
-package com.emat.reapi.global;
+package com.emat.reapi.config;
 
 import com.mongodb.client.MongoClient;
 import io.mongock.runner.springboot.EnableMongock;

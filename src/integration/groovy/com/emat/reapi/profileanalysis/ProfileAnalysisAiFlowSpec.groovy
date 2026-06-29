@@ -97,8 +97,8 @@ class ProfileAnalysisAiFlowSpec extends BaseIntegrationSpec {
         doc.submissionDate = Instant.now()
         doc.publicToken = "pt_" + submissionId
         doc.answers = [
-                new ClientTestAnswerDocument("p1_q1", StatementProfile.PROFIL_1, "lim1", "sup1", -2),
-                new ClientTestAnswerDocument("p1_q2", StatementProfile.PROFIL_1, "lim2", "sup2", 2)
+                new ClientTestAnswerDocument("p1_q1", StatementProfile.PROFIL_1.toProfileId(), "lim1", "sup1", -2),
+                new ClientTestAnswerDocument("p1_q2", StatementProfile.PROFIL_1.toProfileId(), "lim2", "sup2", 2)
         ]
         mongoTemplate.insert(doc).block()
     }

@@ -31,7 +31,7 @@ import java.time.Instant
 class FpTestControllerSpec extends BaseIntegrationSpec {
 
     private void seedDefinition(String statementId, StatementProfile category, String statementKey) {
-        def doc = new StatementDefinitionDocument(statementId, statementKey, category, [
+        def doc = new StatementDefinitionDocument(statementId, statementKey, category.toProfileId(), [
                 new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementId),
                 new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementId)
         ])

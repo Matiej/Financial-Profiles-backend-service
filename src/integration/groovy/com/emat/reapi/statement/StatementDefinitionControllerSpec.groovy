@@ -15,17 +15,17 @@ import spock.lang.Unroll
 class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
 
     private void seedDefinition(String statementId, StatementProfile category, String statementKey) {
-        def doc = new StatementDefinitionDocument(statementId, statementKey, category, [
+        def doc = new StatementDefinitionDocument(statementId, statementKey, category.toProfileId(), [
                 new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementId),
                 new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementId)
         ])
         mongoTemplate.insert(doc).block()
     }
 
-    private static Map definitionPayload(String statementId, String category, String statementKey) {
+    private static Map definitionPayload(String statementId, String profileId, String statementKey) {
         [
                 statementId            : statementId,
-                category               : category,
+                profileId              : profileId,
                 statementKey           : statementKey,
                 statementTypeDefinitions: [
                         [statementType: "LIMITING", statementDescription: "ograniczajace " + statementId],
@@ -38,7 +38,7 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
         when:
         def result = authenticatedPost("/api/definition", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(definitionPayload("p1_q1", "PROFIL_1", "p1_q1"))
+                .bodyValue(definitionPayload("p1_q1", "profil_1", "p1_q1"))
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody(Map)
@@ -47,7 +47,7 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
 
         then: "the controller echoes the saved definition"
         result.statementId == "p1_q1"
-        result.category == "PROFIL_1"
+        result.profileId == "profil_1"
         result.statementKey == "p1_q1"
         result.statementTypeDefinitions[0].statementType == "LIMITING"
         result.statementTypeDefinitions[1].statementType == "SUPPORTING"
@@ -56,7 +56,7 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
         def saved = mongoTemplate.findAll(StatementDefinitionDocument).collectList().block()
         saved.size() == 1
         saved[0].statementKey == "p1_q1"
-        saved[0].category.name() == "PROFIL_1"
+        saved[0].profileId == "profil_1"
     }
 
     def "should return all statement definitions"() {
@@ -76,31 +76,31 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
         result.collect { it.statementKey } as Set == ["p1_q1", "p2_q1"] as Set
     }
 
-    def "should return only the requested category, ordered by statementId ascending"() {
-        given: "two PROFIL_1 definitions inserted out of order, plus an unrelated PROFIL_2 one"
+    def "should return only the requested profile, ordered by statementId ascending"() {
+        given: "two profil_1 definitions inserted out of order, plus an unrelated profil_2 one"
         seedDefinition("p1_q2", StatementProfile.PROFIL_1, "p1_q2")
         seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
         seedDefinition("p2_q1", StatementProfile.PROFIL_2, "p2_q1")
 
         when:
-        def result = authenticatedGet("/api/definition/category?category=PROFIL_1", "BUSINESS_ADMIN")
+        def result = authenticatedGet("/api/definition?profileId=profil_1", "BUSINESS_ADMIN")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBodyList(Map)
                 .returnResult()
                 .responseBody
 
-        then: "only PROFIL_1 is returned, sorted by statementId asc (PROFIL_2 excluded)"
+        then: "only profil_1 is returned, sorted by statementId asc (profil_2 excluded)"
         result.size() == 2
         result[0].statementId == "p1_q1"
         result[1].statementId == "p1_q2"
-        result[0].category == "PROFIL_1"
-        result[1].category == "PROFIL_1"
+        result[0].profileId == "profil_1"
+        result[1].profileId == "profil_1"
     }
 
-    def "should return an empty array for a category with no definitions"() {
+    def "should return an empty array for a profile with no definitions"() {
         when:
-        def result = authenticatedGet("/api/definition/category?category=PROFIL_8", "BUSINESS_ADMIN")
+        def result = authenticatedGet("/api/definition?profileId=profil_8", "BUSINESS_ADMIN")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBodyList(Map)
@@ -111,13 +111,17 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
         result.isEmpty()
     }
 
-    def "should return 400 for an unknown category enum value"() {
-        when:
-        def response = authenticatedGet("/api/definition/category?category=NOT_A_PROFILE", "BUSINESS_ADMIN")
+    def "should return an empty array for an unknown profileId (free string, no longer a 400)"() {
+        when: "profileId is now a free-form reference, not a constrained enum"
+        def result = authenticatedGet("/api/definition?profileId=not_a_profile", "BUSINESS_ADMIN")
                 .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
 
         then:
-        response.expectStatus().isBadRequest()
+        result.isEmpty()
     }
 
     def "should return 400 for an empty body"() {

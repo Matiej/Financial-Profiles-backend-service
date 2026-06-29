@@ -16,4 +16,12 @@ public record ProfileLabels(
                 profile.getResourcesName()
         );
     }
+
+    public static ProfileLabels of(ProfileSnapshot snapshot) {
+        return new ProfileLabels(
+                snapshot.blockingName(),
+                snapshot.transitionalName(),
+                snapshot.resourcesName()
+        );
+    }
 }

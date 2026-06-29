@@ -2,6 +2,7 @@ package com.emat.reapi.clienttest.infra;
 
 
 import com.emat.reapi.clienttest.domain.ClientTestSubmission;
+import com.emat.reapi.statement.domain.ProfileSnapshot;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -35,6 +37,9 @@ public class ClientTestDocument {
     private Instant submissionDate;
     private String publicToken;
     private List<ClientTestAnswerDocument> answers;
+    // Profile labels frozen at save time (profileId -> snapshot), so scoring/AI/report
+    // for this test stay stable even if the live profile is later edited or deleted (F5 reads these).
+    private Map<String, ProfileSnapshot> profileSnapshots;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate
@@ -55,7 +60,8 @@ public class ClientTestDocument {
                 testName,
                 publicToken,
                 answers.stream().map(ClientTestAnswerDocument::toDomain).toList(),
-                createdAt
+                createdAt,
+                profileSnapshots
         );
     }
 
@@ -65,7 +71,7 @@ public class ClientTestDocument {
         var answerDocs = submission.getClientTestAnswerList().stream()
                 .map(a -> new ClientTestAnswerDocument(
                         a.statementKey(),
-                        a.category(),
+                        a.profileId(),
                         a.limitingDescription(),
                         a.supportingDescription(),
                         a.scoring()

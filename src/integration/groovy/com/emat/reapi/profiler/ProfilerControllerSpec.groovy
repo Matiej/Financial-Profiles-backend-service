@@ -3,6 +3,8 @@ package com.emat.reapi.profiler
 import com.emat.reapi.BaseIntegrationSpec
 import com.emat.reapi.clienttest.infra.ClientTestAnswerDocument
 import com.emat.reapi.clienttest.infra.ClientTestDocument
+import com.emat.reapi.migrations.v008profilesinit.ProfilesSeed
+import com.emat.reapi.statement.domain.ProfileSnapshot
 import com.emat.reapi.statement.domain.StatementProfile
 import spock.lang.Unroll
 
@@ -29,6 +31,11 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
 
     // ---- seed helpers ----
 
+    // Profile label snapshots, keyed by profileId, mirroring what ClientTestServiceImpl freezes
+    // into a completed test at save time. Scoring (F5+) reads labels from these, not the live profile.
+    private static final Map<String, ProfileSnapshot> SNAPSHOTS =
+            ProfilesSeed.ALL.collectEntries { [(it.id): ProfileSnapshot.of(it)] }
+
     /**
      * Seeds a completed client test (the record created after a client submits answers).
      * This is the document read by the ProfilerController scoring endpoints.
@@ -48,6 +55,8 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         doc.submissionDate = Instant.now()
         doc.publicToken = "pt_" + testSubmissionPublicId
         doc.answers = answers
+        doc.profileSnapshots = answers.collect { it.profileId }.unique()
+                .collectEntries { [(it): SNAPSHOTS[it]] }
         mongoTemplate.insert(doc).block()
         return doc
     }
@@ -55,14 +64,12 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     private static ClientTestAnswerDocument answer(String questionKey, StatementProfile category, int scoring) {
         new ClientTestAnswerDocument(
                 questionKey,
-                category,
+                category.toProfileId(),
                 "ograniczajace " + questionKey,
                 "wspierajace " + questionKey,
                 scoring
         )
     }
-
-    // ---- GET /api/profiler/scoring — short list of all ClientTest results ----
 
     def "should return 200 with an empty scoring list when no client tests exist"() {
         when:
@@ -194,9 +201,9 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
 
         then: "PROFIL_2 (totalScore=0) before PROFIL_1 (totalScore=4)"
         result.profiles.size() == 2
-        result.profiles[0].profileId == "PROFIL_2"
+        result.profiles[0].profileId == "profil_2"
         result.profiles[0].totalScore == 0
-        result.profiles[1].profileId == "PROFIL_1"
+        result.profiles[1].profileId == "profil_1"
         result.profiles[1].totalScore == 4
     }
 
@@ -237,7 +244,7 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
                 .responseBody
 
         then: "50% < 68 → strefa przejściowa"
-        result.profiles.find { it.profileId == "PROFIL_1" }.computedLabel == "Strażniczka Braku (strefa przejściowa)"
+        result.profiles.find { it.profileId == "profil_1" }.computedLabel == "Strażniczka Braku (strefa przejściowa)"
     }
 
     def "should sort statements within a profile block ascending by scoring"() {

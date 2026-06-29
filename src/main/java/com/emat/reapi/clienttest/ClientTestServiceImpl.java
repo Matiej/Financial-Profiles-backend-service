@@ -11,9 +11,12 @@ import com.emat.reapi.clienttest.infra.ClientTestRepository;
 import com.emat.reapi.fptest.FpTestService;
 import com.emat.reapi.fptest.domain.FpTest;
 import com.emat.reapi.infrastructure.n8n.N8nService;
+import com.emat.reapi.statement.domain.Profile;
+import com.emat.reapi.statement.domain.ProfileSnapshot;
 import com.emat.reapi.statement.domain.StatementDefinition;
 import com.emat.reapi.statement.domain.StatementType;
 import com.emat.reapi.statement.domain.StatementTypeDefinition;
+import com.emat.reapi.statement.port.ProfileService;
 import com.emat.reapi.statement.port.StatementDefinitionService;
 import com.emat.reapi.submission.SubmissionService;
 import com.emat.reapi.submission.domain.Submission;
@@ -23,12 +26,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,6 +47,7 @@ public class ClientTestServiceImpl implements ClientTestService {
     private final SubmissionService submissionService;
     private final FpTestService fpTestService;
     private final StatementDefinitionService statementDefinitionService;
+    private final ProfileService profileService;
     private final ClientTestRepository clientTestRepository;
     private final N8nService n8nService;
 
@@ -129,7 +135,9 @@ public class ClientTestServiceImpl implements ClientTestService {
                             mapToDomain(statementDefinitions, request.clientTestAnswers())
                     );
                     ClientTestDocument clientTestDocument = ClientTestDocument.fromDomain(clientTestSubmission);
-                    return clientTestRepository.save(clientTestDocument)
+                    return buildProfileSnapshots(clientTestSubmission)
+                            .doOnNext(clientTestDocument::setProfileSnapshots)
+                            .then(clientTestRepository.save(clientTestDocument))
                             .onErrorMap(err -> {
                                 if (err instanceof DuplicateKeyException) {
                                     return new ClientTestException(
@@ -159,6 +167,18 @@ public class ClientTestServiceImpl implements ClientTestService {
                 .then();
     }
 
+    // Freeze the labels of every profile referenced by the test's answers (profileId -> snapshot),
+    // captured at save time so historical scoring/AI stays stable across later profile edits/deletes.
+    private Mono<Map<String, ProfileSnapshot>> buildProfileSnapshots(ClientTestSubmission submission) {
+        List<String> profileIds = submission.getClientTestAnswerList().stream()
+                .map(ClientTestAnswer::profileId)
+                .distinct()
+                .toList();
+        return Flux.fromIterable(profileIds)
+                .flatMap(profileService::getProfileById)
+                .collectMap(Profile::getId, ProfileSnapshot::of);
+    }
+
     private List<ClientTestAnswer> mapToDomain(List<StatementDefinition> statementDefinitions, List<ClientTestAnswerDto> clientTestAnswers) {
         var definitionByKey = statementDefinitions.stream()
                 .collect(Collectors.toMap(
@@ -172,7 +192,7 @@ public class ClientTestServiceImpl implements ClientTestService {
                     StatementDefinition statementDefinition = definitionByKey.get(statementKey);
                     return new ClientTestAnswer(
                             statementKey,
-                            statementDefinition.getCategory(),
+                            statementDefinition.getProfileId(),
                             mapToDefinition(statementDefinition.getStatementTypeDefinitions(), LIMITING),
                             mapToDefinition(statementDefinition.getStatementTypeDefinitions(), SUPPORTING),
                             answerDto.scoring()

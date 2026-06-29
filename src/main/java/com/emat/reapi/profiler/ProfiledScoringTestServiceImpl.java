@@ -4,7 +4,10 @@ import com.emat.reapi.clienttest.ClientTestSubmissionService;
 import com.emat.reapi.clienttest.domain.ClientTestAnswer;
 import com.emat.reapi.clienttest.domain.ClientTestSubmission;
 import com.emat.reapi.profiler.domain.*;
-import com.emat.reapi.statement.domain.StatementProfile;
+import com.emat.reapi.statement.domain.ProfileLabels;
+import com.emat.reapi.statement.domain.ProfileSnapshot;
+import com.emat.reapi.statement.domain.ScoringLabelResolver;
+import com.emat.reapi.statement.domain.ScoringMath;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestService {
     private final ClientTestSubmissionService clientTestSubmissionService;
+    private final ScoringLabelResolver scoringLabelResolver;
 
     @Override
     public Mono<ScoringProfiledClientDetails> getScoringProfile(String testSubmissionPublicId) {
@@ -43,14 +47,18 @@ public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestServic
     }
 
     private ScoringProfiledClientDetails mapToProfile(ClientTestSubmission clientTestSubmission) {
-        Map<StatementProfile, List<ClientTestAnswer>> byProfile =
+        Map<String, List<ClientTestAnswer>> byProfile =
                 clientTestSubmission.getClientTestAnswerList().stream()
-                        .collect(Collectors.groupingBy(ClientTestAnswer::category));
+                        .collect(Collectors.groupingBy(ClientTestAnswer::profileId));
+
+        Map<String, ProfileSnapshot> snapshots = clientTestSubmission.getProfileSnapshots() == null
+                ? Map.of()
+                : clientTestSubmission.getProfileSnapshots();
 
         ScoringOverallSummary overall = buildOverallSummary(clientTestSubmission.getClientTestAnswerList());
 
         List<ScoringProfileBlock> profiles = byProfile.entrySet().stream()
-                .map(entry -> buildProfileBlock(entry.getKey(), entry.getValue()))
+                .map(entry -> buildProfileBlock(entry.getKey(), entry.getValue(), snapshots.get(entry.getKey())))
                 .sorted(Comparator.comparingInt(ScoringProfileBlock::getTotalScore))
                 .toList();
 
@@ -82,12 +90,19 @@ public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestServic
         return new ScoringOverallSummary(answers.size(), totalScore, buckets);
     }
 
-    private ScoringProfileBlock buildProfileBlock(StatementProfile profile, List<ClientTestAnswer> answers) {
+    private ScoringProfileBlock buildProfileBlock(String profileId, List<ClientTestAnswer> answers, ProfileSnapshot snapshot) {
         int totalScore = answers.stream().mapToInt(ClientTestAnswer::scoring).sum();
         int totalAnswers = answers.size();
         double avgScore = totalAnswers == 0 ? 0.0 : (double) totalScore / totalAnswers;
-        double scorePercent = StatementProfile.computePercent(totalScore, totalAnswers);
-        String computedLabel = profile.computeLabel(scorePercent);
+        double scorePercent = ScoringMath.computePercent(totalScore, totalAnswers);
+
+        // Labels come from the snapshot frozen at test save time. Defensive fallback to the
+        // raw profileId when a snapshot is missing (e.g. profile not found at save time).
+        String profileName = snapshot != null ? snapshot.plName() : profileId;
+        ProfileLabels labels = snapshot != null
+                ? ProfileLabels.of(snapshot)
+                : new ProfileLabels(profileId, profileId, profileId);
+        String computedLabel = scoringLabelResolver.computeLabel(scorePercent, labels);
 
         List<ScoringStatementPair> pairs = answers.stream()
                 .map(answer -> new ScoringStatementPair(
@@ -100,8 +115,8 @@ public class ProfiledScoringTestServiceImpl implements ProfiledScoringTestServic
                 .toList();
 
         return new ScoringProfileBlock(
-                profile.name(),
-                profile.getPlName(),
+                profileId,
+                profileName,
                 computedLabel,
                 Math.round(scorePercent * 10.0) / 10.0,
                 totalAnswers,

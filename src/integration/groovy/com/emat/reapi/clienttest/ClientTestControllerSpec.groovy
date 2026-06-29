@@ -53,7 +53,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
     // ---- seed helpers ----
 
     private StatementDefinitionDocument seedDefinition(String statementId, StatementProfile category, String statementKey) {
-        def doc = new StatementDefinitionDocument(statementId, statementKey, category, [
+        def doc = new StatementDefinitionDocument(statementId, statementKey, category.toProfileId(), [
                 new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementId),
                 new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementId)
         ])

@@ -2,6 +2,8 @@ package com.emat.reapi.profileanalysis
 
 import com.emat.reapi.clienttest.domain.ClientTestAnswer
 import com.emat.reapi.clienttest.domain.ClientTestSubmission
+import com.emat.reapi.migrations.v008profilesinit.ProfilesSeed
+import com.emat.reapi.statement.domain.ProfileSnapshot
 import com.emat.reapi.statement.domain.StatementProfile
 import com.emat.reapi.statement.domain.StatementType
 import spock.lang.Specification
@@ -20,8 +22,12 @@ import java.time.Instant
 class ClientTestProfiledMapperSpec extends Specification {
 
     private static ClientTestAnswer answer(String key, StatementProfile category, int scoring) {
-        new ClientTestAnswer(key, category, "lim-" + key, "sup-" + key, scoring)
+        new ClientTestAnswer(key, category.toProfileId(), "lim-" + key, "sup-" + key, scoring)
     }
+
+    // Profile label snapshots keyed by profileId, mirroring what is frozen into a completed test.
+    private static final Map<String, ProfileSnapshot> SNAPSHOTS =
+            ProfilesSeed.ALL.collectEntries { [(it.id): ProfileSnapshot.of(it)] }
 
     private static ClientTestSubmission submission(List<ClientTestAnswer> answers) {
         def s = new ClientTestSubmission()
@@ -32,6 +38,8 @@ class ClientTestProfiledMapperSpec extends Specification {
         s.testId = "fpt-1"
         s.testName = "Test 1"
         s.clientTestAnswerList = answers
+        s.profileSnapshots = answers == null ? [:] : answers.collect { it.profileId() }.unique()
+                .collectEntries { [(it): SNAPSHOTS[it]] }
         return s
     }
 
@@ -93,13 +101,13 @@ class ClientTestProfiledMapperSpec extends Specification {
         result.profiledCategoryClientStatementsList.size() == 2
 
         and:
-        def p1 = result.profiledCategoryClientStatementsList.find { it.category.categoryName == "PROFIL_1" }
+        def p1 = result.profiledCategoryClientStatementsList.find { it.category.categoryName == "profil_1" }
         p1.totalLimiting == 1
         p1.totalSupporting == 1
         p1.profiledStatementList.size() == 2   // the scoring==0 answer adds nothing
 
         and:
-        def p2 = result.profiledCategoryClientStatementsList.find { it.category.categoryName == "PROFIL_2" }
+        def p2 = result.profiledCategoryClientStatementsList.find { it.category.categoryName == "profil_2" }
         p2.totalLimiting == 1
         p2.totalSupporting == 0
     }
@@ -112,7 +120,7 @@ class ClientTestProfiledMapperSpec extends Specification {
 
         then:
         result.profiledCategoryClientStatementsList.size() == 1
-        result.profiledCategoryClientStatementsList[0].category.categoryName == "PROFIL_1"
+        result.profiledCategoryClientStatementsList[0].category.categoryName == "profil_1"
         result.profiledCategoryClientStatementsList[0].category.description == "Strażniczka Braku"
     }
 

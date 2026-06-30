@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Resolves the scoring-zone label for a given percent using global thresholds.
- * Replaces the per-enum {@code StatementProfile.computeLabel}; labels now come from
+ * Replaced the former per-enum {@code StatementProfile.computeLabel}; labels now come from
  * a {@link ProfileLabels} triple (live profile or historical snapshot).
  */
 @Component

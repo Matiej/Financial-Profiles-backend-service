@@ -1,11 +1,10 @@
 package com.emat.reapi.infrastructure.n8n;
 
 import com.emat.reapi.clienttest.domain.ClientTestAnswer;
-import com.emat.reapi.statement.domain.StatementProfile;
 
 public record ClientAnswerNotification(
         String questionKey,
-        StatementProfile category,
+        String profileId,
         String limitingDescription,
         String supportingDescription,
         int scoring
@@ -14,7 +13,7 @@ public record ClientAnswerNotification(
     public static ClientAnswerNotification fromDomain(ClientTestAnswer clientTestAnswerDocument) {
         return new ClientAnswerNotification(
                 clientTestAnswerDocument.statementKey(),
-                clientTestAnswerDocument.category(),
+                clientTestAnswerDocument.profileId(),
                 clientTestAnswerDocument.limitingDescription(),
                 clientTestAnswerDocument.supportingDescription(),
                 clientTestAnswerDocument.scoring()

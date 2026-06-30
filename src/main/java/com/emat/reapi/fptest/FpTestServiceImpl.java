@@ -7,7 +7,9 @@ import com.emat.reapi.fptest.domain.FpTestStatement;
 import com.emat.reapi.fptest.infra.FpTestDocument;
 import com.emat.reapi.fptest.infra.FpTestRepository;
 import com.emat.reapi.fptest.infra.FpTestStatementDocument;
+import com.emat.reapi.statement.domain.Profile;
 import com.emat.reapi.statement.domain.StatementDefinition;
+import com.emat.reapi.statement.port.ProfileService;
 import com.emat.reapi.statement.port.StatementDefinitionService;
 import com.emat.reapi.submission.SubmissionService;
 import com.emat.reapi.submission.domain.Submission;
@@ -21,6 +23,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 class FpTestServiceImpl implements FpTestService {
     private final FpTestRepository fpTestRepository;
     private final StatementDefinitionService statementDefinitionService;
+    private final ProfileService profileService;
     private final SubmissionService submissionService;
 
     @Override
@@ -138,8 +142,14 @@ class FpTestServiceImpl implements FpTestService {
 
     @Override
     public Flux<FpTestStatement> getAllTestStatements() {
-        return statementDefinitionService.getAllStatementDefinitions()
-                .map(FpTestStatement::formStatementDefinition);
+        return profileNamesById()
+                .flatMapMany(profileNamesById -> statementDefinitionService.getAllStatementDefinitions()
+                        .map(definition -> FpTestStatement.formStatementDefinition(definition, profileNamesById)));
+    }
+
+    private Mono<Map<String, String>> profileNamesById() {
+        return profileService.getActiveProfiles()
+                .collectMap(Profile::getId, Profile::getPlName);
     }
 
     @Override
@@ -154,27 +164,25 @@ class FpTestServiceImpl implements FpTestService {
     }
 
     private Mono<List<FpTestStatement>> buildFpTestStatements(List<String> statementKeys) {
-        return statementDefinitionService.getAllStatementDefinitions()
-                .collectMap(StatementDefinition::getStatementKey)
-                .flatMap(definitionsByKey -> {
-                    List<String> missingKeys = statementKeys.stream()
-                            .filter(key -> !definitionsByKey.containsKey(key))
-                            .toList();
-                    if (!missingKeys.isEmpty()) {
-                        String msg = "Keys not found in statement definitions: " +
-                                String.join(", ", missingKeys);
-                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, msg));
-                    }
-                    List<FpTestStatement> statements = statementKeys.stream()
-                            .map(definitionsByKey::get)
-                            .map(FpTestStatement::formStatementDefinition) // -> FpTestStatementDocument
-                            .map(doc -> new FpTestStatement(
-                                    doc.statementKey(),
-                                    doc.statementsDescription(),
-                                    doc.statementsCategory()
-                            ))
-                            .collect(Collectors.toList());
-                    return Mono.just(statements);
-                });
+        return Mono.zip(
+                statementDefinitionService.getAllStatementDefinitions().collectMap(StatementDefinition::getStatementKey),
+                profileNamesById()
+        ).flatMap(tuple -> {
+            Map<String, StatementDefinition> definitionsByKey = tuple.getT1();
+            Map<String, String> profileNamesById = tuple.getT2();
+            List<String> missingKeys = statementKeys.stream()
+                    .filter(key -> !definitionsByKey.containsKey(key))
+                    .toList();
+            if (!missingKeys.isEmpty()) {
+                String msg = "Keys not found in statement definitions: " +
+                        String.join(", ", missingKeys);
+                return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, msg));
+            }
+            List<FpTestStatement> statements = statementKeys.stream()
+                    .map(definitionsByKey::get)
+                    .map(definition -> FpTestStatement.formStatementDefinition(definition, profileNamesById))
+                    .collect(Collectors.toList());
+            return Mono.just(statements);
+        });
     }
 }

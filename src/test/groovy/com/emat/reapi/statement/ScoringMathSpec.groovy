@@ -6,7 +6,7 @@ import spock.lang.Unroll
 
 /**
  * Pure-logic unit tests for ScoringMath.computePercent,
- * including the division-by-zero guard. Extracted from StatementProfileSpec.
+ * including the division-by-zero guard. Extracted from the former StatementProfile enum logic.
  */
 class ScoringMathSpec extends Specification {
 

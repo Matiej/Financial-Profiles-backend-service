@@ -1,7 +1,7 @@
 package com.emat.reapi.statement.domain;
 
 /**
- * Pure scoring math, extracted from the StatementProfile enum being removed.
+ * Pure scoring math, extracted from the former StatementProfile enum.
  */
 public final class ScoringMath {
 

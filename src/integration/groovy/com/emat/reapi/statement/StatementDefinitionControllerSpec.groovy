@@ -1,7 +1,6 @@
 package com.emat.reapi.statement
 
 import com.emat.reapi.BaseIntegrationSpec
-import com.emat.reapi.statement.domain.StatementProfile
 import com.emat.reapi.statement.domain.StatementType
 import com.emat.reapi.statement.domain.StatementTypeDefinition
 import com.emat.reapi.statement.infra.StatementDefinitionDocument
@@ -14,8 +13,8 @@ import spock.lang.Unroll
  */
 class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
 
-    private void seedDefinition(String statementId, StatementProfile category, String statementKey) {
-        def doc = new StatementDefinitionDocument(statementId, statementKey, category.toProfileId(), [
+    private void seedDefinition(String statementId, String profileId, String statementKey) {
+        def doc = new StatementDefinitionDocument(statementId, statementKey, profileId, [
                 new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementId),
                 new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementId)
         ])
@@ -61,8 +60,8 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
 
     def "should return all statement definitions"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
-        seedDefinition("p2_q1", StatementProfile.PROFIL_2, "p2_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("p2_q1", "profil_2", "p2_q1")
 
         when:
         def result = authenticatedGet("/api/definition", "BUSINESS_ADMIN").exchange()
@@ -78,9 +77,9 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
 
     def "should return only the requested profile, ordered by statementId ascending"() {
         given: "two profil_1 definitions inserted out of order, plus an unrelated profil_2 one"
-        seedDefinition("p1_q2", StatementProfile.PROFIL_1, "p1_q2")
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
-        seedDefinition("p2_q1", StatementProfile.PROFIL_2, "p2_q1")
+        seedDefinition("p1_q2", "profil_1", "p1_q2")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("p2_q1", "profil_2", "p2_q1")
 
         when:
         def result = authenticatedGet("/api/definition?profileId=profil_1", "BUSINESS_ADMIN")

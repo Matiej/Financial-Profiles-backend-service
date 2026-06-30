@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.Instant;
 
 /**
- * Editable profile (replaces the fixed {@link StatementProfile} enum).
+ * Editable profile (replaced the former fixed StatementProfile enum).
  * Identified by an immutable {@code id}; labels/order are editable.
  * Label thresholds (0/68) are global (config) — not stored here.
  */

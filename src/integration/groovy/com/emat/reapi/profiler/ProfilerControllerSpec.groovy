@@ -5,7 +5,6 @@ import com.emat.reapi.clienttest.infra.ClientTestAnswerDocument
 import com.emat.reapi.clienttest.infra.ClientTestDocument
 import com.emat.reapi.migrations.v008profilesinit.ProfilesSeed
 import com.emat.reapi.statement.domain.ProfileSnapshot
-import com.emat.reapi.statement.domain.StatementProfile
 import spock.lang.Unroll
 
 import java.time.Instant
@@ -61,10 +60,10 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         return doc
     }
 
-    private static ClientTestAnswerDocument answer(String questionKey, StatementProfile category, int scoring) {
+    private static ClientTestAnswerDocument answer(String questionKey, String profileId, int scoring) {
         new ClientTestAnswerDocument(
                 questionKey,
-                category.toProfileId(),
+                profileId,
                 "ograniczajace " + questionKey,
                 "wspierajace " + questionKey,
                 scoring
@@ -86,11 +85,11 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should return one short scoring entry per seeded client test"() {
         given:
         seedClientTest("tspi_short-1", "sub_short-1", "fpt_short", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 2),
-                answer("p2_q1", StatementProfile.PROFIL_2, 0)
+                answer("p1_q1", "profil_1", 2),
+                answer("p2_q1", "profil_2", 0)
         ])
         seedClientTest("tspi_short-2", "sub_short-2", "fpt_short", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 1)
+                answer("p1_q1", "profil_1", 1)
         ])
 
         when:
@@ -107,10 +106,10 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should return correct totals in a short scoring entry"() {
         given:
         seedClientTest("tspi_totals", "sub_totals", "fpt_totals", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 2),
-                answer("p1_q2", StatementProfile.PROFIL_1, 2),
-                answer("p2_q1", StatementProfile.PROFIL_2, 0),
-                answer("p2_q2", StatementProfile.PROFIL_2, 0)
+                answer("p1_q1", "profil_1", 2),
+                answer("p1_q2", "profil_1", 2),
+                answer("p2_q1", "profil_2", 0),
+                answer("p2_q2", "profil_2", 0)
         ])
 
         when:
@@ -140,10 +139,10 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should return 200 with structured scoring details"() {
         given:
         seedClientTest("tspi_detail", "sub_detail", "fpt_detail", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 2),
-                answer("p1_q2", StatementProfile.PROFIL_1, 2),
-                answer("p2_q1", StatementProfile.PROFIL_2, 0),
-                answer("p2_q2", StatementProfile.PROFIL_2, 0)
+                answer("p1_q1", "profil_1", 2),
+                answer("p1_q2", "profil_1", 2),
+                answer("p2_q1", "profil_2", 0),
+                answer("p2_q2", "profil_2", 0)
         ])
 
         when:
@@ -163,10 +162,10 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should compute the overall scoring summary correctly"() {
         given:
         seedClientTest("tspi_overall", "sub_overall", "fpt_overall", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 2),
-                answer("p1_q2", StatementProfile.PROFIL_1, 2),
-                answer("p2_q1", StatementProfile.PROFIL_2, 0),
-                answer("p2_q2", StatementProfile.PROFIL_2, 0)
+                answer("p1_q1", "profil_1", 2),
+                answer("p1_q2", "profil_1", 2),
+                answer("p2_q1", "profil_2", 0),
+                answer("p2_q2", "profil_2", 0)
         ])
 
         when:
@@ -186,10 +185,10 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should sort profile blocks ascending by totalScore"() {
         given:
         seedClientTest("tspi_sort", "sub_sort", "fpt_sort", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 2),
-                answer("p1_q2", StatementProfile.PROFIL_1, 2),
-                answer("p2_q1", StatementProfile.PROFIL_2, 0),
-                answer("p2_q2", StatementProfile.PROFIL_2, 0)
+                answer("p1_q1", "profil_1", 2),
+                answer("p1_q2", "profil_1", 2),
+                answer("p2_q1", "profil_2", 0),
+                answer("p2_q2", "profil_2", 0)
         ])
 
         when:
@@ -210,10 +209,10 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should assign profile labels reflecting the score thresholds"() {
         given: "PROFIL_1 at 100% → zasoby; PROFIL_2 at 0% → blokada"
         seedClientTest("tspi_labels", "sub_labels", "fpt_labels", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 2),
-                answer("p1_q2", StatementProfile.PROFIL_1, 2),
-                answer("p2_q1", StatementProfile.PROFIL_2, 0),
-                answer("p2_q2", StatementProfile.PROFIL_2, 0)
+                answer("p1_q1", "profil_1", 2),
+                answer("p1_q2", "profil_1", 2),
+                answer("p2_q1", "profil_2", 0),
+                answer("p2_q2", "profil_2", 0)
         ])
 
         when:
@@ -233,7 +232,7 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should assign the transitional label when the score is below 68 percent"() {
         given: "1 answer scoring 1 out of max 2 → 50% → strefa przejściowa"
         seedClientTest("tspi_trans", "sub_trans", "fpt_trans", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 1)
+                answer("p1_q1", "profil_1", 1)
         ])
 
         when:
@@ -250,8 +249,8 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
     def "should sort statements within a profile block ascending by scoring"() {
         given:
         seedClientTest("tspi_stmts", "sub_stmts", "fpt_stmts", [
-                answer("p1_q1", StatementProfile.PROFIL_1, 2),
-                answer("p1_q2", StatementProfile.PROFIL_1, -2)
+                answer("p1_q1", "profil_1", 2),
+                answer("p1_q2", "profil_1", -2)
         ])
 
         when:

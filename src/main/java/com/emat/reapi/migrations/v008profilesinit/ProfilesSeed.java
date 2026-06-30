@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Seeds the 8 initial profiles (carried over from the StatementProfile enum being removed).
+ * Seeds the 8 initial profiles (carried over from the former StatementProfile enum).
  * Id = stable slug "profil_1".."profil_8" — referenced by definitions (F3+).
  */
 public class ProfilesSeed {

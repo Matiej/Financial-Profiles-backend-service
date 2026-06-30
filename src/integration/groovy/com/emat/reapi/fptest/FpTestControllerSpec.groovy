@@ -3,9 +3,10 @@ package com.emat.reapi.fptest
 import com.emat.reapi.BaseIntegrationSpec
 import com.emat.reapi.fptest.infra.FpTestDocument
 import com.emat.reapi.fptest.infra.FpTestStatementDocument
-import com.emat.reapi.statement.domain.StatementProfile
+import com.emat.reapi.migrations.v008profilesinit.ProfilesSeed
 import com.emat.reapi.statement.domain.StatementType
 import com.emat.reapi.statement.domain.StatementTypeDefinition
+import com.emat.reapi.statement.infra.ProfileDocument
 import com.emat.reapi.statement.infra.StatementDefinitionDocument
 import com.emat.reapi.submission.domain.SubmissionStatus
 import com.emat.reapi.submission.infra.SubmissionDocument
@@ -30,8 +31,14 @@ import java.time.Instant
  */
 class FpTestControllerSpec extends BaseIntegrationSpec {
 
-    private void seedDefinition(String statementId, StatementProfile category, String statementKey) {
-        def doc = new StatementDefinitionDocument(statementId, statementKey, category.toProfileId(), [
+    // FpTest serves the live profile name (plName) per statement; seed the standard
+    // profiles so statementsCategory resolves to plName instead of falling back to profileId.
+    def setup() {
+        ProfilesSeed.ALL.each { mongoTemplate.insert(ProfileDocument.toDocument(it)).block() }
+    }
+
+    private void seedDefinition(String statementId, String profileId, String statementKey) {
+        def doc = new StatementDefinitionDocument(statementId, statementKey, profileId, [
                 new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementId),
                 new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementId)
         ])
@@ -77,7 +84,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should create a test, generate fpt_ testId and resolve statement descriptions"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
 
         when:
         def result = authenticatedPost("/api/pftest", "BUSINESS_ADMIN")
@@ -124,7 +131,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 400 when creating a test with a blank testName"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
 
         when:
         def result = authenticatedPost("/api/pftest", "BUSINESS_ADMIN")
@@ -186,8 +193,8 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should update a test without submissions"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
-        seedDefinition("p2_q1", StatementProfile.PROFIL_2, "p2_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("p2_q1", "profil_2", "p2_q1")
         seedFpTest("fpt_upd", ["p1_q1"])
 
         when: "the statement set is changed and there are no submissions"
@@ -208,8 +215,8 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 409 when changing statements of a test that already has submissions"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
-        seedDefinition("p2_q1", StatementProfile.PROFIL_2, "p2_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("p2_q1", "profil_2", "p2_q1")
         seedFpTest("fpt_guard", ["p1_q1"])
         seedSubmissionForTest("fpt_guard")
 
@@ -229,7 +236,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should allow re-sending the same statements when submissions exist"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
         seedFpTest("fpt_same", ["p1_q1"])
         seedSubmissionForTest("fpt_same")
 
@@ -245,7 +252,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 404 when updating an unknown testId"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
 
         when:
         def result = authenticatedPut("/api/pftest/fpt_missing", "BUSINESS_ADMIN")
@@ -306,8 +313,8 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return all available statements derived from the definitions"() {
         given:
-        seedDefinition("p1_q1", StatementProfile.PROFIL_1, "p1_q1")
-        seedDefinition("p2_q1", StatementProfile.PROFIL_2, "p2_q1")
+        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("p2_q1", "profil_2", "p2_q1")
 
         when:
         def result = authenticatedGet("/api/pftest/statements", "BUSINESS_ADMIN").exchange()

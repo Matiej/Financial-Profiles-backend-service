@@ -10,7 +10,7 @@ import spock.lang.Unroll
  * Pure-logic unit tests for the global ScoringLabelResolver.
  *
  * Pins the threshold boundaries (blocking <= 0, resources >= 68) that previously
- * lived in StatementProfile.computeLabel, now driven by configurable thresholds.
+ * lived in the former StatementProfile.computeLabel, now driven by configurable thresholds.
  */
 class ScoringLabelResolverSpec extends Specification {
 

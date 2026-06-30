@@ -70,27 +70,30 @@ public class ClientTestServiceImpl implements ClientTestService {
                 ).flatMap(both -> {
                     Submission submission = both.getT1();
                     FpTest fpTest = both.getT2();
-                    return statementDefinitionService.getAllStatementDefinitions()
-                            .collectList()
-                            .map(defList -> fpTest.fpTestStatements()
-                                    .stream()
-                                    .map(fpTestStatement -> findDefByStatementKey(fpTestStatement.statementKey(), defList))
-                                    .toList()
-                            ).map(definitions -> {
-                                List<ClientTestQuestion> clientTestQuestions = definitions
-                                        .stream()
-                                        .map(this::mapToTestQuestions)
-                                        .collect(Collectors.toCollection(ArrayList::new));
-                                Collections.shuffle(clientTestQuestions);
-                                return new ClientTest(
-                                        fpTest.testName(),
-                                        fpTest.descriptionBefore(),
-                                        fpTest.descriptionAfter(),
-                                        submission.publicToken(),
-                                        submission.submissionId(),
-                                        clientTestQuestions
-                                );
-                            });
+                    return Mono.zip(
+                            statementDefinitionService.getAllStatementDefinitions().collectList(),
+                            profileService.getActiveProfiles().collectMap(Profile::getId, Profile::getPlName)
+                    ).map(tuple -> {
+                        List<StatementDefinition> defList = tuple.getT1();
+                        Map<String, String> profileNamesById = tuple.getT2();
+                        List<StatementDefinition> definitions = fpTest.fpTestStatements()
+                                .stream()
+                                .map(fpTestStatement -> findDefByStatementKey(fpTestStatement.statementKey(), defList))
+                                .toList();
+                        List<ClientTestQuestion> clientTestQuestions = definitions
+                                .stream()
+                                .map(definition -> mapToTestQuestions(definition, profileNamesById))
+                                .collect(Collectors.toCollection(ArrayList::new));
+                        Collections.shuffle(clientTestQuestions);
+                        return new ClientTest(
+                                fpTest.testName(),
+                                fpTest.descriptionBefore(),
+                                fpTest.descriptionAfter(),
+                                submission.publicToken(),
+                                submission.submissionId(),
+                                clientTestQuestions
+                        );
+                    });
                 }));
     }
 
@@ -239,13 +242,14 @@ public class ClientTestServiceImpl implements ClientTestService {
                 );
     }
 
-    private ClientTestQuestion mapToTestQuestions(StatementDefinition statementDefinition) {
+    private ClientTestQuestion mapToTestQuestions(StatementDefinition statementDefinition, Map<String, String> profileNamesById) {
         StatementTypeDefinition supportingDef = getStatementType(StatementType.SUPPORTING, statementDefinition.getStatementTypeDefinitions());
         StatementTypeDefinition limitingDef = getStatementType(StatementType.LIMITING, statementDefinition.getStatementTypeDefinitions());
+        String profileId = statementDefinition.getProfileId();
         return new ClientTestQuestion(
                 statementDefinition.getStatementId(),
                 statementDefinition.getStatementKey(),
-                statementDefinition.getCategory(),
+                profileNamesById.getOrDefault(profileId, profileId),
                 supportingDef.getStatementDescription(),
                 limitingDef.getStatementDescription()
         );

@@ -31,7 +31,7 @@ public record ClientTestDto(
                         new ClientQuestionDto(
                                 question.id(),
                                 question.statementKey(),
-                                question.statementCategory().getPlName(),
+                                question.statementCategory(),
                                 question.supportingStatement(),
                                 question.limitingStatement()
                         )

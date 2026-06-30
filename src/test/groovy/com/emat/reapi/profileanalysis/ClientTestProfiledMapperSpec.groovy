@@ -4,7 +4,6 @@ import com.emat.reapi.clienttest.domain.ClientTestAnswer
 import com.emat.reapi.clienttest.domain.ClientTestSubmission
 import com.emat.reapi.migrations.v008profilesinit.ProfilesSeed
 import com.emat.reapi.statement.domain.ProfileSnapshot
-import com.emat.reapi.statement.domain.StatementProfile
 import com.emat.reapi.statement.domain.StatementType
 import spock.lang.Specification
 
@@ -21,8 +20,8 @@ import java.time.Instant
  */
 class ClientTestProfiledMapperSpec extends Specification {
 
-    private static ClientTestAnswer answer(String key, StatementProfile category, int scoring) {
-        new ClientTestAnswer(key, category.toProfileId(), "lim-" + key, "sup-" + key, scoring)
+    private static ClientTestAnswer answer(String key, String profileId, int scoring) {
+        new ClientTestAnswer(key, profileId, "lim-" + key, "sup-" + key, scoring)
     }
 
     // Profile label snapshots keyed by profileId, mirroring what is frozen into a completed test.
@@ -46,7 +45,7 @@ class ClientTestProfiledMapperSpec extends Specification {
     def "negative scoring becomes an active LIMITING statement"() {
         when:
         def result = ClientTestProfiledMapper.toProfiled(submission([
-                answer("p1_q1", StatementProfile.PROFIL_1, -2)
+                answer("p1_q1", "profil_1", -2)
         ]))
 
         then:
@@ -62,7 +61,7 @@ class ClientTestProfiledMapperSpec extends Specification {
     def "positive scoring becomes an active SUPPORTING statement"() {
         when:
         def result = ClientTestProfiledMapper.toProfiled(submission([
-                answer("p1_q1", StatementProfile.PROFIL_1, 2)
+                answer("p1_q1", "profil_1", 2)
         ]))
 
         then:
@@ -78,7 +77,7 @@ class ClientTestProfiledMapperSpec extends Specification {
     def "zero scoring contributes no evidence"() {
         when:
         def result = ClientTestProfiledMapper.toProfiled(submission([
-                answer("p1_q1", StatementProfile.PROFIL_1, 0)
+                answer("p1_q1", "profil_1", 0)
         ]))
 
         then:
@@ -91,10 +90,10 @@ class ClientTestProfiledMapperSpec extends Specification {
     def "answers are grouped by category with correct per-category counts"() {
         when:
         def result = ClientTestProfiledMapper.toProfiled(submission([
-                answer("p1_q1", StatementProfile.PROFIL_1, -1),
-                answer("p1_q2", StatementProfile.PROFIL_1, 2),
-                answer("p1_q3", StatementProfile.PROFIL_1, 0),
-                answer("p2_q1", StatementProfile.PROFIL_2, -2)
+                answer("p1_q1", "profil_1", -1),
+                answer("p1_q2", "profil_1", 2),
+                answer("p1_q3", "profil_1", 0),
+                answer("p2_q1", "profil_2", -2)
         ]))
 
         then:
@@ -115,7 +114,7 @@ class ClientTestProfiledMapperSpec extends Specification {
     def "only categories present in the answers are emitted (not all eight profiles)"() {
         when:
         def result = ClientTestProfiledMapper.toProfiled(submission([
-                answer("p1_q1", StatementProfile.PROFIL_1, -1)
+                answer("p1_q1", "profil_1", -1)
         ]))
 
         then:
@@ -127,7 +126,7 @@ class ClientTestProfiledMapperSpec extends Specification {
     def "maps top-level fields from the submission"() {
         when:
         def result = ClientTestProfiledMapper.toProfiled(submission([
-                answer("p1_q1", StatementProfile.PROFIL_1, -1)
+                answer("p1_q1", "profil_1", -1)
         ]))
 
         then:

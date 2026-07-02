@@ -143,7 +143,7 @@ class FpTestServiceImpl implements FpTestService {
     @Override
     public Flux<FpTestStatement> getAllTestStatements() {
         return profileNamesById()
-                .flatMapMany(profileNamesById -> statementDefinitionService.getAllStatementDefinitions()
+                .flatMapMany(profileNamesById -> statementDefinitionService.getActiveStatementDefinitions()
                         .map(definition -> FpTestStatement.formStatementDefinition(definition, profileNamesById)));
     }
 
@@ -165,7 +165,7 @@ class FpTestServiceImpl implements FpTestService {
 
     private Mono<List<FpTestStatement>> buildFpTestStatements(List<String> statementKeys) {
         return Mono.zip(
-                statementDefinitionService.getAllStatementDefinitions().collectMap(StatementDefinition::getStatementKey),
+                statementDefinitionService.getActiveStatementDefinitions().collectMap(StatementDefinition::getStatementKey),
                 profileNamesById()
         ).flatMap(tuple -> {
             Map<String, StatementDefinition> definitionsByKey = tuple.getT1();

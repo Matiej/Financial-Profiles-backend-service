@@ -74,7 +74,9 @@ public class ProfileServiceImpl implements ProfileService {
         return profileRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Profile not found: " + id)))
-                .flatMap(existing -> statementDefinitionRepository.existsByProfileId(id)
+                // Only ACTIVE definitions block deletion — soft-deleted ones and historical
+                // client tests do not (history reads frozen profile snapshots).
+                .flatMap(existing -> statementDefinitionRepository.existsByProfileIdAndIsDeletedFalse(id)
                         .flatMap(inUse -> {
                             if (Boolean.TRUE.equals(inUse)) {
                                 return Mono.error(new ProfileStateException(

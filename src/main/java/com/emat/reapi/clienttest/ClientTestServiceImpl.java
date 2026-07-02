@@ -71,7 +71,7 @@ public class ClientTestServiceImpl implements ClientTestService {
                     Submission submission = both.getT1();
                     FpTest fpTest = both.getT2();
                     return Mono.zip(
-                            statementDefinitionService.getAllStatementDefinitions().collectList(),
+                            statementDefinitionService.getActiveStatementDefinitions().collectList(),
                             profileService.getActiveProfiles().collectMap(Profile::getId, Profile::getPlName)
                     ).map(tuple -> {
                         List<StatementDefinition> defList = tuple.getT1();
@@ -107,7 +107,7 @@ public class ClientTestServiceImpl implements ClientTestService {
                                 HttpStatus.BAD_REQUEST
                         ));
                     }
-                    Mono<List<StatementDefinition>> monoDef = statementDefinitionService.getAllStatementDefinitions()
+                    Mono<List<StatementDefinition>> monoDef = statementDefinitionService.getActiveStatementDefinitions()
                             .collectList()
                             .flatMap(definitions -> validateQuestions(request.clientTestAnswers(), definitions).thenReturn(definitions));
                     Mono<FpTest> fpTestMono = fpTestService.getFpTesByTestId(submission.testId())
@@ -247,7 +247,8 @@ public class ClientTestServiceImpl implements ClientTestService {
         StatementTypeDefinition limitingDef = getStatementType(StatementType.LIMITING, statementDefinition.getStatementTypeDefinitions());
         String profileId = statementDefinition.getProfileId();
         return new ClientTestQuestion(
-                statementDefinition.getStatementId(),
+                // definition document id — opaque to the client app (answers reference statementKey)
+                statementDefinition.getId(),
                 statementDefinition.getStatementKey(),
                 profileNamesById.getOrDefault(profileId, profileId),
                 supportingDef.getStatementDescription(),

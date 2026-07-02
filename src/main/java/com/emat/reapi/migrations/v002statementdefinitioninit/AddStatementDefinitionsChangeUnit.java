@@ -11,6 +11,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -34,9 +36,15 @@ public class AddStatementDefinitionsChangeUnit {
 
         List<StatementDefinition> allDefinitions = StatementDefinitionsSeed.ALL;
 
-        List<StatementDefinitionDocument> documents = allDefinitions.stream()
-                .map(StatementDefinitionDocument::toDocument)
-                .toList();
+        Instant base = Instant.now();
+        List<StatementDefinitionDocument> documents = new ArrayList<>(allDefinitions.size());
+        for (int i = 0; i < allDefinitions.size(); i++) {
+            StatementDefinitionDocument document = StatementDefinitionDocument.toDocument(allDefinitions.get(i));
+            Instant timestamp = base.plusMillis(i);
+            document.setCreatedAt(timestamp);
+            document.setUpdatedAt(timestamp);
+            documents.add(document);
+        }
 
         mongoTemplate.insert(documents, StatementDefinitionDocument.COLLECTION_NAME);
 
@@ -46,14 +54,12 @@ public class AddStatementDefinitionsChangeUnit {
 
     @RollbackExecution
     public void rollback() {
-        List<String> statementIds = StatementDefinitionsSeed.ALL.stream()
-                .map(StatementDefinition::getStatementId)
-                .map(String::trim)
-                .map(String::toLowerCase)
+        List<String> statementKeys = StatementDefinitionsSeed.ALL.stream()
+                .map(StatementDefinition::getStatementKey)
                 .toList();
 
         Query query = Query.query(
-                Criteria.where("statementId").in(statementIds)
+                Criteria.where("statementKey").in(statementKeys)
         );
 
         var result = mongoTemplate.remove(

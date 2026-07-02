@@ -1,7 +1,7 @@
 package com.emat.reapi.api;
 
-import com.emat.reapi.api.dto.statement.StatementDefinitionDto;
-import com.emat.reapi.statement.domain.StatementDefinition;
+import com.emat.reapi.api.dto.statement.StatementDefinitionRequest;
+import com.emat.reapi.api.dto.statement.StatementDefinitionResponse;
 import com.emat.reapi.statement.port.StatementDefinitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,49 +26,82 @@ public class StatementDefinitionController {
     private final StatementDefinitionService statementService;
 
     @Operation(
-            summary = "Save statement definition",
-            description = "Adds a new fistStatement definition to the system",
+            summary = "Create statement definition",
+            description = "Adds a new statement definition; statementKey is generated server-side",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Statement definition saved successfully"),
-                    @ApiResponse(responseCode = "400", description = "Invalid input")
+                    @ApiResponse(responseCode = "201", description = "Statement definition created"),
+                    @ApiResponse(responseCode = "400", description = "Invalid input or unknown profileId")
             }
     )
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public Mono<StatementDefinitionDto> saveStatement(
-            @Valid @RequestBody StatementDefinitionDto dto
+    public Mono<StatementDefinitionResponse> createStatement(
+            @Valid @RequestBody StatementDefinitionRequest request
     ) {
-        log.info("Received request: POST /api/fistStatement, statementsId: {}", dto.statementId());
-        StatementDefinition domain = dto.toDomain();
-        return statementService.saveStatementDefinition(domain)
-                .map(StatementDefinitionDto::toDto);
+        log.info("Received request: POST /api/definition, profileId: {}", request.profileId());
+        return statementService.createStatementDefinition(request.toDomain())
+                .map(StatementDefinitionResponse::toResponse);
     }
 
     @Operation(
-            summary = "Get all statement definitions",
-            description = "Retrieves all fistStatement definitions from the system",
+            summary = "Get all active statement definitions",
+            description = "Retrieves all active (not soft-deleted) statement definitions",
             responses = @ApiResponse(responseCode = "200", description = "List retrieved successfully")
     )
     @GetMapping()
-    public Flux<StatementDefinitionDto> getAllStatements() {
-        log.info("received request: GET /api/statement");
-        return statementService.getAllStatementDefinitions()
-                .map(StatementDefinitionDto::toDto);
+    public Flux<StatementDefinitionResponse> getAllStatements() {
+        log.info("Received request: GET /api/definition");
+        return statementService.getActiveStatementDefinitions()
+                .map(StatementDefinitionResponse::toResponse);
     }
 
     @Operation(
             summary = "Get statement definitions by profile",
-            description = "Retrieves fistStatement definitions filtered by profileId",
+            description = "Retrieves active statement definitions filtered by profileId",
             responses = @ApiResponse(responseCode = "200", description = "List retrieved successfully")
     )
     @GetMapping(params = "profileId")
-    public Flux<StatementDefinitionDto> getStatementsByProfileId(
+    public Flux<StatementDefinitionResponse> getStatementsByProfileId(
             @Parameter(description = "Profile id to filter definitions")
             @RequestParam String profileId
     ) {
-        log.info("received request: GET /api/definition with 'profileId': {}", profileId);
+        log.info("Received request: GET /api/definition with 'profileId': {}", profileId);
         return statementService.getStatementDefinitionsByProfileId(profileId)
-                .map(StatementDefinitionDto::toDto);
+                .map(StatementDefinitionResponse::toResponse);
     }
 
+    @Operation(
+            summary = "Update statement definition",
+            description = "Edits the profile assignment and texts; statementKey is immutable",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Statement definition updated"),
+                    @ApiResponse(responseCode = "400", description = "Invalid input or unknown profileId"),
+                    @ApiResponse(responseCode = "404", description = "Statement definition not found"),
+                    @ApiResponse(responseCode = "409", description = "Profile change rejected — definition used in a submitted test")
+            }
+    )
+    @PutMapping("/{id}")
+    public Mono<StatementDefinitionResponse> updateStatement(
+            @PathVariable String id,
+            @Valid @RequestBody StatementDefinitionRequest request
+    ) {
+        log.info("Received request: PUT /api/definition/{}", id);
+        return statementService.updateStatementDefinition(id, request.toDomain())
+                .map(StatementDefinitionResponse::toResponse);
+    }
+
+    @Operation(
+            summary = "Soft-delete statement definition",
+            responses = {
+                    @ApiResponse(responseCode = "202", description = "Statement definition soft-deleted"),
+                    @ApiResponse(responseCode = "404", description = "Statement definition not found"),
+                    @ApiResponse(responseCode = "409", description = "Definition still referenced by an existing test")
+            }
+    )
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public Mono<Void> deleteStatement(@PathVariable String id) {
+        log.info("Received request: DELETE /api/definition/{}", id);
+        return statementService.softDeleteStatementDefinition(id);
+    }
 }

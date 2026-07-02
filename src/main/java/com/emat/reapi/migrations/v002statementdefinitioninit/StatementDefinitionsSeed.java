@@ -273,12 +273,12 @@ public class StatementDefinitionsSeed {
             PROFIL_5, PROFIL_6, PROFIL_7, PROFIL_8
     ).flatMap(List::stream).toList();
 
-    private static StatementDefinition def(String id, String profileId, String key,
+    private static StatementDefinition def(String statementId, String profileId, String statementKey,
                                            String limiting, String supporting) {
         return new StatementDefinition(
-                id,
+                statementId,
                 profileId,
-                key,
+                statementKey,
                 List.of(
                         new StatementTypeDefinition(StatementType.LIMITING, limiting),
                         new StatementTypeDefinition(StatementType.SUPPORTING, supporting)

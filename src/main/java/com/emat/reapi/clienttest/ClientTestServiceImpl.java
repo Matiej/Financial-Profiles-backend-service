@@ -21,6 +21,7 @@ import com.emat.reapi.statement.port.StatementDefinitionService;
 import com.emat.reapi.submission.SubmissionService;
 import com.emat.reapi.submission.domain.Submission;
 import com.emat.reapi.submission.domain.SubmissionStatus;
+import com.emat.reapi.submission.domain.SubmissionView;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -100,6 +101,8 @@ public class ClientTestServiceImpl implements ClientTestService {
     @Override
     public Mono<Void> saveClientTest(ClientTestSubmissionDto request) {
         return submissionService.findBySubmissionId(request.submissionId())
+                // internal token flow needs the bare Submission, not the admin read-model
+                .map(SubmissionView::submission)
                 .flatMap(submission -> {
                     if (!submission.publicToken().equals(request.publicToken())) {
                         return Mono.error(new ClientTestException(

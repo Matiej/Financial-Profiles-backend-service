@@ -1,6 +1,7 @@
 package com.emat.reapi.submission
 
 import com.emat.reapi.BaseIntegrationSpec
+import com.emat.reapi.fptest.infra.FpTestDocument
 import com.emat.reapi.submission.domain.SubmissionStatus
 import com.emat.reapi.submission.infra.SubmissionDocument
 import org.springframework.http.MediaType
@@ -50,7 +51,24 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         return doc
     }
 
+    // A submission may only target an existing, non-deleted FpTest (F8.5 token-revival guard),
+    // so create/update happy paths seed one. testName on the response resolves from it.
+    private FpTestDocument seedTest(String testId, Map overrides = [:]) {
+        def doc = new FpTestDocument()
+        doc.testId = testId
+        doc.testName = overrides.testName ?: "Test " + testId
+        doc.descriptionBefore = "before"
+        doc.descriptionAfter = "after"
+        doc.fpTestStatementDocuments = []
+        doc.isDeleted = (overrides.isDeleted ?: false) as boolean
+        mongoTemplate.insert(doc).block()
+        return doc
+    }
+
     def "should create a submission, generate ids and persist it as OPEN"() {
+        given:
+        seedTest("test-1", [testName: "Zestaw Finansowy"])
+
         when:
         def result = authenticatedPost("/api/submission", "BUSINESS_ADMIN")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -68,6 +86,7 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         result.clientName == "Jan Kowalski"
         result.clientEmail == "jan@example.com"
         result.testId == "test-1"
+        result.testName == "Zestaw Finansowy"
         result.status == "OPEN"
         result.orderId.startsWith("order-1_")
         (result.remainingSeconds as long) > 0
@@ -107,6 +126,45 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         "blank testId"          | [testId: ""]
         "durationDays below min"| [durationDays: 0]
         "durationDays above max"| [durationDays: 100]
+    }
+
+    def "should return 404 TEST_NOT_FOUND when creating a submission for an unknown testId"() {
+        when: "no FpTest is seeded for the target testId"
+        def result = authenticatedPost("/api/submission", "BUSINESS_ADMIN")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(submissionPayload(testId: "test-missing"))
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "TEST_NOT_FOUND"
+
+        and: "nothing is persisted"
+        mongoTemplate.findAll(SubmissionDocument).collectList().block().isEmpty()
+    }
+
+    def "should return 409 TEST_DELETED when creating a submission for a soft-deleted testId"() {
+        given:
+        seedTest("test-del", [isDeleted: true])
+
+        when:
+        def result = authenticatedPost("/api/submission", "BUSINESS_ADMIN")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(submissionPayload(testId: "test-del"))
+                .exchange()
+                .expectStatus().isEqualTo(409)
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "TEST_DELETED"
+
+        and: "nothing is persisted"
+        mongoTemplate.findAll(SubmissionDocument).collectList().block().isEmpty()
     }
 
     def "should return all submissions ordered by createdAt descending"() {
@@ -158,6 +216,7 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
     def "should update an OPEN submission and return 200"() {
         given:
         seedSubmission("sub_update", SubmissionStatus.OPEN)
+        seedTest("test-2")
 
         when:
         def result = authenticatedPut("/api/submission/sub_update", "BUSINESS_ADMIN")
@@ -228,6 +287,84 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
 
         then:
         result.code == "SUBMISSION_NOT_FOUND"
+    }
+
+    def "should return 404 TEST_NOT_FOUND when updating (extending) to an unknown testId"() {
+        given: "an OPEN submission that FE tries to re-point to a non-existent test"
+        seedSubmission("sub_repoint", SubmissionStatus.OPEN)
+
+        when:
+        def result = authenticatedPut("/api/submission/sub_repoint", "BUSINESS_ADMIN")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue([
+                        clientName  : "Anna Nowak",
+                        clientEmail : "anna@example.com",
+                        testId      : "test-missing",
+                        durationDays: 14
+                ])
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "TEST_NOT_FOUND"
+    }
+
+    def "should return 409 TEST_DELETED when extending an OPEN submission onto a soft-deleted test"() {
+        given: "revival guard: extending a token can't resurrect a soft-deleted test"
+        seedSubmission("sub_revive", SubmissionStatus.OPEN)
+        seedTest("test-del", [isDeleted: true])
+
+        when:
+        def result = authenticatedPut("/api/submission/sub_revive", "BUSINESS_ADMIN")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue([
+                        clientName  : "Anna Nowak",
+                        clientEmail : "anna@example.com",
+                        testId      : "test-del",
+                        durationDays: 14
+                ])
+                .exchange()
+                .expectStatus().isEqualTo(409)
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.code == "TEST_DELETED"
+    }
+
+    def "should resolve testName from FpTest even when the test is soft-deleted"() {
+        given: "resolve-by-testId is not filtered by isDeleted, so history keeps the name"
+        seedSubmission("sub_named", SubmissionStatus.OPEN, [testId: "test-sd"])
+        seedTest("test-sd", [testName: "Zestaw Archiwalny", isDeleted: true])
+
+        when:
+        def result = authenticatedGet("/api/submission/sub_named", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.testName == "Zestaw Archiwalny"
+    }
+
+    def "should fall back to raw testId as testName when no FpTest resolves"() {
+        given:
+        seedSubmission("sub_noname", SubmissionStatus.OPEN, [testId: "test-orphan"])
+
+        when:
+        def result = authenticatedGet("/api/submission/sub_noname", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.testName == "test-orphan"
     }
 
     def "should close an OPEN submission, returning 202 and status DONE"() {

@@ -13,6 +13,7 @@ import com.emat.reapi.statement.port.ProfileService;
 import com.emat.reapi.statement.port.StatementDefinitionService;
 import com.emat.reapi.submission.SubmissionService;
 import com.emat.reapi.submission.domain.Submission;
+import com.emat.reapi.submission.domain.SubmissionStatus;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +100,7 @@ class FpTestServiceImpl implements FpTestService {
 
     @Override
     public Flux<FpTestResponse> findAll() {
-        return fpTestRepository.findAll()
+        return fpTestRepository.findAllByIsDeletedFalse()
                 .map(FpTestDocument::toDomain)
                 .flatMap(this::mapToResponseWithSubmissions);
     }
@@ -108,7 +110,17 @@ class FpTestServiceImpl implements FpTestService {
                 .collectList()
                 .map(list -> {
                     var submissionIds = list.stream().map(Submission::submissionId).toList();
-                    return FpTestResponse.toResponse(fpTest, submissionIds);
+                    Instant now = Instant.now();
+                    long done = list.stream()
+                            .filter(s -> s.status() == SubmissionStatus.DONE)
+                            .count();
+                    long openActive = list.stream()
+                            .filter(s -> s.status() == SubmissionStatus.OPEN && s.expireAt().isAfter(now))
+                            .count();
+                    long openExpired = list.stream()
+                            .filter(s -> s.status() == SubmissionStatus.OPEN && !s.expireAt().isAfter(now))
+                            .count();
+                    return FpTestResponse.toResponse(fpTest, submissionIds, done, openActive, openExpired);
                 });
     }
 
@@ -129,15 +141,22 @@ class FpTestServiceImpl implements FpTestService {
                         HttpStatus.NOT_FOUND,
                         "Test with testId=" + testId + " not found"
                 )))
-                .flatMap(doc -> submissionService.existsByTestId(testId))
-                .flatMap(isSubmission -> {
-                    if (isSubmission) {
-                        return Mono.error(new FpTestStateException(
-                                "Can't delete test Id: " + testId + " because is already submitted",
-                                FpTestStateException.FpTestErrorType.FP_TEST_DELETE_ERROR));
-                    }
-                    return fpTestRepository.deleteByTestId(testId);
-                });
+                // Soft-delete. Only a live token (OPEN, not expired) blocks — someone may be
+                // mid-test. DONE and expired-OPEN submissions don't: completed history is
+                // self-contained in ClientTestDocument, and dead tokens can't be revived for
+                // a deleted test (create/update submission validates testId — F8.5).
+                .flatMap(doc -> submissionService
+                        .existsByTestIdAndStatusAndExpireAtAfter(testId, SubmissionStatus.OPEN, Instant.now())
+                        .flatMap(hasLiveToken -> {
+                            if (Boolean.TRUE.equals(hasLiveToken)) {
+                                return Mono.error(new FpTestStateException(
+                                        "Can't delete test Id: " + testId + " because an open, non-expired submission exists",
+                                        FpTestStateException.FpTestErrorType.FP_TEST_DELETE_ERROR));
+                            }
+                            doc.setDeleted(true);
+                            return fpTestRepository.save(doc);
+                        }))
+                .then();
     }
 
     @Override

@@ -28,6 +28,9 @@ public class FpTestDocument {
     private String descriptionBefore;
     private String descriptionAfter;
     private List<FpTestStatementDocument> fpTestStatementDocuments;
+    // Soft-delete: hidden from admin lists; resolve by testId stays unfiltered so
+    // completed-history views keep working. Guarded by open, non-expired submissions.
+    private boolean isDeleted;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate

@@ -18,4 +18,7 @@ public interface SubmissionRepository extends ReactiveMongoRepository<Submission
     Mono<SubmissionDocument> findByPublicTokenAndStatus(String publicToken, SubmissionStatus status);
 
     Mono<SubmissionDocument> findByPublicTokenAndStatusAndExpireAtAfter(String publicToken, SubmissionStatus status, Instant now);
+
+    // FpTest soft-delete guard: is anyone still able to take the test (live token)?
+    Mono<Boolean> existsByTestIdAndStatusAndExpireAtAfter(String testId, SubmissionStatus status, Instant now);
 }

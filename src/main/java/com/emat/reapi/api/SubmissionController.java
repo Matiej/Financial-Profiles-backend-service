@@ -34,8 +34,11 @@ public class SubmissionController {
     @ResponseStatus(HttpStatus.OK)
     Flux<SubmissionResponse> findAll() {
         log.info("Received request: GET '/api/submission' to retrieve all submissions");
+        // resolve test names once for the whole list, not per element/nt
         return submissionService.findAllByOrderByCreatedAtDesc()
-                .map(SubmissionResponse::fromDomain);
+                .map(submissionView -> SubmissionResponse.fromDomain(
+                        submissionView.submission(),
+                        submissionView.testName()));
     }
 
     @Operation(
@@ -48,7 +51,7 @@ public class SubmissionController {
     Mono<SubmissionResponse> findBySubmissionId(@PathVariable String submissionId) {
         log.info("Received request: GET '/api/submission/{submissionsId}' to retrieve for submissionId: {}", submissionId);
         return submissionService.findBySubmissionId(submissionId)
-                .map(SubmissionResponse::fromDomain);
+                .map(submissionView -> SubmissionResponse.fromDomain(submissionView.submission(), submissionView.testName()));
     }
 
     @Operation(
@@ -64,7 +67,7 @@ public class SubmissionController {
     Mono<SubmissionResponse> createSubmission(@RequestBody @Valid SubmissionDto request) {
         log.info("Received request: POST '/api/submission' to create submission for clientId={}", request.clientId());
         return submissionService.createSubmission(request)
-                .map(SubmissionResponse::fromDomain);
+                .map(submissionView -> SubmissionResponse.fromDomain(submissionView.submission(), submissionView.testName()));
     }
 
     @Operation(
@@ -83,7 +86,7 @@ public class SubmissionController {
     ) {
         log.info("Received request: PUT '/api/submission/{submissionId}' update for submissionId: {}", submissionId);
         return submissionService.updateSubmission(update, submissionId)
-                .map(SubmissionResponse::fromDomain);
+                .map(submissionView ->  SubmissionResponse.fromDomain(submissionView.submission(), submissionView.testName()));
     }
 
     @Operation(
@@ -108,6 +111,6 @@ public class SubmissionController {
     Mono<SubmissionResponse> closeSubmissions(@PathVariable String submissionId) {
         log.info("Received request: PUT '/api/submission/{submissionId}/close' close  submissionId: {}", submissionId);
         return submissionService.closeSubmission(submissionId)
-                .map(SubmissionResponse::fromDomain);
+                .map(submissionView -> SubmissionResponse.fromDomain(submissionView.submission(), submissionView.testName()));
     }
 }

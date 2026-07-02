@@ -66,7 +66,9 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         return doc
     }
 
-    private void seedSubmissionForTest(String testId) {
+    private void seedSubmissionForTest(String testId,
+                                       SubmissionStatus status = SubmissionStatus.OPEN,
+                                       Instant expireAt = Instant.now().plusSeconds(7 * 24 * 60 * 60)) {
         def doc = new SubmissionDocument()
         doc.submissionId = "sub_" + UUID.randomUUID()
         doc.orderId = "order_" + UUID.randomUUID()
@@ -74,10 +76,10 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         doc.clientName = "Jan Kowalski"
         doc.clientEmail = "jan@example.com"
         doc.testId = testId
-        doc.status = SubmissionStatus.OPEN
+        doc.status = status
         doc.durationDays = 7
         doc.publicToken = "pt_" + UUID.randomUUID()
-        doc.expireAt = Instant.now().plusSeconds(7 * 24 * 60 * 60)
+        doc.expireAt = expireAt
         mongoTemplate.insert(doc).block()
     }
 
@@ -276,7 +278,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         result.code == "GENERIC_STATUS_ERROR"
     }
 
-    def "should delete a test without submissions"() {
+    def "should soft-delete a test without submissions and hide it from the list"() {
         given:
         seedFpTest("fpt_del", ["p1_q1"])
 
@@ -284,14 +286,24 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         authenticatedDelete("/api/pftest/fpt_del", "BUSINESS_ADMIN").exchange()
                 .expectStatus().isEqualTo(202)
 
-        then:
-        mongoTemplate.findAll(FpTestDocument).collectList().block().isEmpty()
+        then: "the document is kept but flagged deleted (history stays resolvable by testId)"
+        def saved = mongoTemplate.findAll(FpTestDocument).collectList().block()
+        saved.size() == 1
+        saved[0].isDeleted
+
+        and: "it no longer shows up in the admin list"
+        def list = authenticatedGet("/api/pftest", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
+        list.isEmpty()
     }
 
-    def "should return 409 when deleting a test that already has submissions"() {
+    def "should return 409 when deleting a test with a live (OPEN, non-expired) submission"() {
         given:
         seedFpTest("fpt_del_guard", ["p1_q1"])
-        seedSubmissionForTest("fpt_del_guard")
+        seedSubmissionForTest("fpt_del_guard", SubmissionStatus.OPEN, Instant.now().plusSeconds(3600))
 
         when:
         def result = authenticatedDelete("/api/pftest/fpt_del_guard", "BUSINESS_ADMIN").exchange()
@@ -303,8 +315,54 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         then:
         result.code == "FP_TEST_DELETE_ERROR"
 
-        and: "the test is still present"
-        mongoTemplate.findAll(FpTestDocument).collectList().block().size() == 1
+        and: "the test is still present and not deleted"
+        def saved = mongoTemplate.findAll(FpTestDocument).collectList().block()
+        saved.size() == 1
+        !saved[0].isDeleted
+    }
+
+    @Unroll
+    def "should soft-delete a test whose submissions don't block: #scenario"() {
+        given:
+        seedFpTest("fpt_del_ok", ["p1_q1"])
+        seedSubmissionForTest("fpt_del_ok", status, expireAt)
+
+        when:
+        authenticatedDelete("/api/pftest/fpt_del_ok", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isEqualTo(202)
+
+        then: "only a live OPEN token blocks; DONE and expired-OPEN don't"
+        def saved = mongoTemplate.findAll(FpTestDocument).collectList().block()
+        saved.size() == 1
+        saved[0].isDeleted
+
+        where:
+        scenario            | status                 | expireAt
+        "DONE submission"   | SubmissionStatus.DONE  | Instant.now().plusSeconds(3600)
+        "expired OPEN token"| SubmissionStatus.OPEN  | Instant.now().minusSeconds(3600)
+    }
+
+    def "should expose submission counters for the delete-confirmation dialog"() {
+        given:
+        seedFpTest("fpt_counts", ["p1_q1"])
+        seedSubmissionForTest("fpt_counts", SubmissionStatus.DONE, Instant.now().plusSeconds(3600))
+        seedSubmissionForTest("fpt_counts", SubmissionStatus.DONE, Instant.now().minusSeconds(3600))
+        seedSubmissionForTest("fpt_counts", SubmissionStatus.OPEN, Instant.now().plusSeconds(3600))
+        seedSubmissionForTest("fpt_counts", SubmissionStatus.OPEN, Instant.now().minusSeconds(3600))
+        seedSubmissionForTest("fpt_counts", SubmissionStatus.OPEN, Instant.now().minusSeconds(7200))
+
+        when:
+        def result = authenticatedGet("/api/pftest/fpt_counts", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBody(Map)
+                .returnResult()
+                .responseBody
+
+        then:
+        result.submissionIds.size() == 5
+        result.submissionsDone == 2
+        result.submissionsOpenActive == 1
+        result.submissionsOpenExpired == 2
     }
 
     def "should return 404 when deleting an unknown testId"() {

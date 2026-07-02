@@ -12,7 +12,7 @@ import java.time.Instant;
  * Label thresholds (0/68) are global (config) — not stored here.
  */
 @Data
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 public class Profile {
     private String id;

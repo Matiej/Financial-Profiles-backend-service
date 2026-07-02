@@ -3,6 +3,7 @@ package com.emat.reapi.config.error;
 import com.emat.reapi.clienttest.ClientTestException;
 import com.emat.reapi.fptest.FpTestStateException;
 import com.emat.reapi.profiler.ProfilerException;
+import com.emat.reapi.statement.ProfileStateException;
 import com.emat.reapi.submission.SubmissionException;
 import com.emat.reapi.submission.SubmissionStateException;
 import com.emat.reapi.infrastructure.keycloak.KeycloakException;
@@ -89,6 +90,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({FpTestStateException.class})
     public ResponseEntity<ErrorResponse> handleFpTestStateException(FpTestStateException ex, ServerHttpRequest request) {
         log.warn("FpTestStateException: {}", ex.getMessage(), ex);
+        HttpStatus status = HttpStatus.CONFLICT;
+        ErrorResponse errorResponse = ErrorResponse.of(
+                status.value(),
+                status.getReasonPhrase(),
+                ex.getType().name(),
+                ex.getMessage(),
+                request.getPath().value(),
+                null
+        );
+        return ResponseEntity.status(status).body(errorResponse);
+    }
+
+    @ExceptionHandler({ProfileStateException.class})
+    public ResponseEntity<ErrorResponse> handleProfileStateException(ProfileStateException ex, ServerHttpRequest request) {
+        log.warn("ProfileStateException: {}", ex.getMessage(), ex);
         HttpStatus status = HttpStatus.CONFLICT;
         ErrorResponse errorResponse = ErrorResponse.of(
                 status.value(),

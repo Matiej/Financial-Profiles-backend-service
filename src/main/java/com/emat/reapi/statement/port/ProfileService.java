@@ -8,4 +8,7 @@ public interface ProfileService {
 
     Flux<Profile> getActiveProfiles();
     Mono<Profile> getProfileById(String id);
+    Mono<Profile> createProfile(Profile profile);
+    Mono<Profile> updateProfile(String id, Profile updatedProfile);
+    Mono<Void> softDeleteProfile(String id);
 }

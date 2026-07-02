@@ -9,5 +9,5 @@ import reactor.core.publisher.Mono;
 public interface StatementDefinitionRepository extends ReactiveMongoRepository<StatementDefinitionDocument, String> {
     Mono<StatementDefinitionDocument> findByStatementId(String statementId);
     Flux<StatementDefinitionDocument> findAllByProfileIdOrderByStatementIdAsc(String profileId);
-
+    Mono<Boolean> existsByProfileId(String profileId);
 }

@@ -20,7 +20,10 @@ public class SubmissionException extends RuntimeException {
         SUBMISSION_CREATE_ERROR,
         SUBMISSION_UPDATE_ERROR,
         SUBMISSION_NOT_FOUND,
-        SUBMISSION_DELETE_ERROR
+        SUBMISSION_DELETE_ERROR,
+        // target FpTest validation (create / extend a token)
+        TEST_NOT_FOUND,
+        TEST_DELETED
     }
 }
 

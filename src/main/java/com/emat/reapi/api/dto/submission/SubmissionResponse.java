@@ -13,12 +13,15 @@ public record SubmissionResponse(
         String clientEmail,
         String orderId,
         String testId,
+        // resolved server-side from FpTest (also for soft-deleted tests), so the FE
+        // submissions view is self-contained; falls back to raw testId when unresolvable
+        String testName,
         SubmissionStatus status,
         long remainingSeconds,
         String publicToken,
         Instant createdAt
 ) {
-    public static SubmissionResponse fromDomain(Submission domain) {
+    public static SubmissionResponse fromDomain(Submission domain, String testName) {
         long secs = Duration.between(Instant.now(), domain.expireAt()).getSeconds();
         var remaining = domain.status() == SubmissionStatus.OPEN ? Math.max(0, secs): 0;
         return new SubmissionResponse(
@@ -28,6 +31,7 @@ public record SubmissionResponse(
                 domain.clientEmail(),
                 domain.orderId(),
                 domain.testId(),
+                testName,
                 domain.status(),
                 remaining,
                 domain.publicToken(),
@@ -35,4 +39,3 @@ public record SubmissionResponse(
         );
     }
 }
-

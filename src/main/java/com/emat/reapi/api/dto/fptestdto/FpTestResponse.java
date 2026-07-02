@@ -11,11 +11,23 @@ public record FpTestResponse(
         String descriptionAfter,
         List<FpTestStatementDto> fpTestStatementDtoList,
         List<String> submissionIds,
+        // Submission breakdown for the FE delete-confirmation dialog: deleting a test with
+        // DONE/expired submissions succeeds (only a live OPEN token blocks — 409), so the FE
+        // must warn the admin first. Computed from the submission list, no extra queries.
+        long submissionsDone,
+        long submissionsOpenActive,
+        long submissionsOpenExpired,
         String createdAt,
         String updatedAt
 ) {
 
-    public static FpTestResponse toResponse(FpTest domain, List<String> submissions) {
+    public static FpTestResponse toResponse(
+            FpTest domain,
+            List<String> submissions,
+            long submissionsDone,
+            long submissionsOpenActive,
+            long submissionsOpenExpired
+    ) {
         String createdAt = domain.createdAt() != null ? domain.createdAt().toString() : null;
         String updatedAt = domain.updatedAt() != null ? domain.updatedAt().toString() : null;
 
@@ -29,6 +41,9 @@ public record FpTestResponse(
                         .map(FpTestStatementDto::fromDomain)
                         .toList(),
                 submissions,
+                submissionsDone,
+                submissionsOpenActive,
+                submissionsOpenExpired,
                 createdAt,
                 updatedAt
         );

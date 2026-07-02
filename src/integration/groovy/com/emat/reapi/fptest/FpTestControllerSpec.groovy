@@ -37,11 +37,19 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         ProfilesSeed.ALL.each { mongoTemplate.insert(ProfileDocument.toDocument(it)).block() }
     }
 
-    private void seedDefinition(String statementId, String profileId, String statementKey) {
-        def doc = new StatementDefinitionDocument(statementId, statementKey, profileId, [
-                new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementId),
-                new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementId)
-        ])
+    private void seedDefinition(String profileId, String statementKey) {
+        def now = Instant.now()
+        def doc = new StatementDefinitionDocument(
+                statementKey: statementKey,
+                profileId: profileId,
+                statementTypeDefinitions: [
+                        new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementKey),
+                        new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementKey)
+                ],
+                isDeleted: false,
+                createdAt: now,
+                updatedAt: now
+        )
         mongoTemplate.insert(doc).block()
     }
 
@@ -84,7 +92,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should create a test, generate fpt_ testId and resolve statement descriptions"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
 
         when:
         def result = authenticatedPost("/api/pftest", "BUSINESS_ADMIN")
@@ -131,7 +139,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 400 when creating a test with a blank testName"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
 
         when:
         def result = authenticatedPost("/api/pftest", "BUSINESS_ADMIN")
@@ -193,8 +201,8 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should update a test without submissions"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
-        seedDefinition("p2_q1", "profil_2", "p2_q1")
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_2", "p2_q1")
         seedFpTest("fpt_upd", ["p1_q1"])
 
         when: "the statement set is changed and there are no submissions"
@@ -215,8 +223,8 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 409 when changing statements of a test that already has submissions"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
-        seedDefinition("p2_q1", "profil_2", "p2_q1")
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_2", "p2_q1")
         seedFpTest("fpt_guard", ["p1_q1"])
         seedSubmissionForTest("fpt_guard")
 
@@ -236,7 +244,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should allow re-sending the same statements when submissions exist"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
         seedFpTest("fpt_same", ["p1_q1"])
         seedSubmissionForTest("fpt_same")
 
@@ -252,7 +260,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 404 when updating an unknown testId"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
 
         when:
         def result = authenticatedPut("/api/pftest/fpt_missing", "BUSINESS_ADMIN")
@@ -313,8 +321,8 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return all available statements derived from the definitions"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
-        seedDefinition("p2_q1", "profil_2", "p2_q1")
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_2", "p2_q1")
 
         when:
         def result = authenticatedGet("/api/pftest/statements", "BUSINESS_ADMIN").exchange()

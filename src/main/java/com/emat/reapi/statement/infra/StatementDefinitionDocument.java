@@ -5,11 +5,14 @@ import com.emat.reapi.statement.domain.StatementTypeDefinition;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -23,29 +26,30 @@ public class StatementDefinitionDocument {
 
     @Id
     private String id;
-    private String statementId;
     @Indexed(name = "statementKey_idx", background = true, unique = true)
     private String statementKey;
     private String profileId;
     private List<StatementTypeDefinition> statementTypeDefinitions;
-
-    public StatementDefinitionDocument(String statementId, String statementKey, String profileId, List<StatementTypeDefinition> statementTypeDefinitions) {
-        this.statementId = statementId;
-        this.statementKey = statementKey;
-        this.profileId = profileId;
-        this.statementTypeDefinitions = statementTypeDefinitions;
-    }
+    private boolean isDeleted;
+    // Reactive auditing fills these on repository saves; the blocking v002 seed sets them manually.
+    @CreatedDate
+    private Instant createdAt;
+    @LastModifiedDate
+    private Instant updatedAt;
 
     public StatementDefinition toDomain() {
-        return new StatementDefinition(statementId, profileId, statementKey, statementTypeDefinitions);
+        return new StatementDefinition(id, profileId, statementKey, statementTypeDefinitions, isDeleted, createdAt, updatedAt);
     }
 
     public static StatementDefinitionDocument toDocument(StatementDefinition domain) {
         return new StatementDefinitionDocument(
-                domain.getStatementId(),
+                domain.getId(),
                 domain.getStatementKey(),
                 domain.getProfileId(),
-                domain.getStatementTypeDefinitions()
+                domain.getStatementTypeDefinitions(),
+                domain.isDeleted(),
+                domain.getCreatedAt(),
+                domain.getUpdatedAt()
         );
     }
 }

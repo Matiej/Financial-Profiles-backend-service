@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface StatementDefinitionRepository extends ReactiveMongoRepository<StatementDefinitionDocument, String> {
-    Mono<StatementDefinitionDocument> findByStatementId(String statementId);
-    Flux<StatementDefinitionDocument> findAllByProfileIdOrderByStatementIdAsc(String profileId);
-    Mono<Boolean> existsByProfileId(String profileId);
+    Flux<StatementDefinitionDocument> findAllByIsDeletedFalseOrderByCreatedAtAsc();
+    Flux<StatementDefinitionDocument> findAllByProfileIdAndIsDeletedFalseOrderByCreatedAtAsc(String profileId);
+    Mono<Boolean> existsByProfileIdAndIsDeletedFalse(String profileId);
 }

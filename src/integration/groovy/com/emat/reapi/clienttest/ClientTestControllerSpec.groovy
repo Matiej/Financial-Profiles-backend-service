@@ -51,11 +51,19 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
 
     // ---- seed helpers ----
 
-    private StatementDefinitionDocument seedDefinition(String statementId, String profileId, String statementKey) {
-        def doc = new StatementDefinitionDocument(statementId, statementKey, profileId, [
-                new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementId),
-                new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementId)
-        ])
+    private StatementDefinitionDocument seedDefinition(String profileId, String statementKey) {
+        def now = Instant.now()
+        def doc = new StatementDefinitionDocument(
+                statementKey: statementKey,
+                profileId: profileId,
+                statementTypeDefinitions: [
+                        new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementKey),
+                        new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementKey)
+                ],
+                isDeleted: false,
+                createdAt: now,
+                updatedAt: now
+        )
         mongoTemplate.insert(doc).block()
     }
 
@@ -94,8 +102,8 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 200 with questions for a valid public token"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
-        seedDefinition("p1_q2", "profil_1", "p1_q2")
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q2")
         seedFpTest("fpt_get-1", ["p1_q1", "p1_q2"])
         seedSubmission("sub_get-1", "fpt_get-1", "pt_valid")
 
@@ -126,7 +134,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 404 for a DONE submission token"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
         seedFpTest("fpt_done", ["p1_q1"])
         seedSubmission("sub_done", "fpt_done", "pt_done-token", SubmissionStatus.DONE)
 
@@ -139,7 +147,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
 
     def "should return 404 for an expired submission token"() {
         given:
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
         seedFpTest("fpt_expired", ["p1_q1"])
         seedSubmission("sub_expired", "fpt_expired", "pt_expired-token",
                 SubmissionStatus.OPEN, Instant.now().minusSeconds(60))
@@ -164,8 +172,8 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
     def "should save answers, close submission to DONE and notify n8n"() {
         given:
         stubN8nOk()
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
-        seedDefinition("p1_q2", "profil_1", "p1_q2")
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q2")
         seedFpTest("fpt_post-1", ["p1_q1", "p1_q2"])
         seedSubmission("sub_post-1", "fpt_post-1", "pt_post-token")
 
@@ -194,7 +202,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
     def "should return 400 when publicToken does not match submission"() {
         given:
         stubN8nOk()
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
         seedFpTest("fpt_token-mismatch", ["p1_q1"])
         seedSubmission("sub_token-mismatch", "fpt_token-mismatch", "pt_real-token")
 
@@ -215,8 +223,8 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
     def "should return 400 when number of answers does not match test size"() {
         given:
         stubN8nOk()
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
-        seedDefinition("p1_q2", "profil_1", "p1_q2")
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q2")
         seedFpTest("fpt_size-mismatch", ["p1_q1", "p1_q2"])
         seedSubmission("sub_size-mismatch", "fpt_size-mismatch", "pt_size-token")
 
@@ -237,7 +245,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
     def "should return 404 when answer contains an unknown statementKey"() {
         given:
         stubN8nOk()
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
         seedFpTest("fpt_bad-key", ["p1_q1"])
         seedSubmission("sub_bad-key", "fpt_bad-key", "pt_bad-key-token")
 
@@ -292,7 +300,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
     def "should accept a public POST without an auth header"() {
         given:
         stubN8nOk()
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q1")
         seedFpTest("fpt_public", ["p1_q1"])
         seedSubmission("sub_public", "fpt_public", "pt_public-token")
 
@@ -315,8 +323,8 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
     def "should complete full E2E flow: GET test, POST answers, verify submission DONE"() {
         given:
         stubN8nOk()
-        seedDefinition("p1_q1", "profil_1", "p1_q1")
-        seedDefinition("p1_q2", "profil_1", "p1_q2")
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q2")
         seedFpTest("fpt_e2e", ["p1_q1", "p1_q2"])
         seedSubmission("sub_e2e", "fpt_e2e", "pt_e2e-token")
 

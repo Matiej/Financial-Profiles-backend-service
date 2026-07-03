@@ -31,7 +31,6 @@ public class StatementDefinitionDocument {
     private String profileId;
     private List<StatementTypeDefinition> statementTypeDefinitions;
     private boolean isDeleted;
-    // Reactive auditing fills these on repository saves; the blocking v002 seed sets them manually.
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate

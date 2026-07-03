@@ -5,14 +5,14 @@ import com.emat.reapi.fptest.domain.FpTestStatement;
 public record FpTestStatementDto(
         String statementKey,
         String statementsDescription,
-        String statementsCategory
+        String statementsProfile
 ) {
 
     public static FpTestStatementDto fromDomain(FpTestStatement fpTestStatement) {
         return new FpTestStatementDto(
                 fpTestStatement.statementKey(),
                 fpTestStatement.statementsDescription(),
-                fpTestStatement.statementsCategory()
+                fpTestStatement.statementsProfile()
         );
     }
 }

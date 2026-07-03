@@ -37,61 +37,6 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         ProfilesSeed.ALL.each { mongoTemplate.insert(ProfileDocument.toDocument(it)).block() }
     }
 
-    private void seedDefinition(String profileId, String statementKey) {
-        def now = Instant.now()
-        def doc = new StatementDefinitionDocument(
-                statementKey: statementKey,
-                profileId: profileId,
-                statementTypeDefinitions: [
-                        new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementKey),
-                        new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementKey)
-                ],
-                isDeleted: false,
-                createdAt: now,
-                updatedAt: now
-        )
-        mongoTemplate.insert(doc).block()
-    }
-
-    private FpTestDocument seedFpTest(String testId, List<String> statementKeys) {
-        def doc = new FpTestDocument()
-        doc.testId = testId
-        doc.testName = "Test " + testId
-        doc.descriptionBefore = "before"
-        doc.descriptionAfter = "after"
-        doc.fpTestStatementDocuments = statementKeys.collect {
-                new FpTestStatementDocument(it, "desc " + it, "PROFIL")
-        }
-        mongoTemplate.insert(doc).block()
-        return doc
-    }
-
-    private void seedSubmissionForTest(String testId,
-                                       SubmissionStatus status = SubmissionStatus.OPEN,
-                                       Instant expireAt = Instant.now().plusSeconds(7 * 24 * 60 * 60)) {
-        def doc = new SubmissionDocument()
-        doc.submissionId = "sub_" + UUID.randomUUID()
-        doc.orderId = "order_" + UUID.randomUUID()
-        doc.clientId = "client-1"
-        doc.clientName = "Jan Kowalski"
-        doc.clientEmail = "jan@example.com"
-        doc.testId = testId
-        doc.status = status
-        doc.durationDays = 7
-        doc.publicToken = "pt_" + UUID.randomUUID()
-        doc.expireAt = expireAt
-        mongoTemplate.insert(doc).block()
-    }
-
-    private static Map fpTestPayload(Map overrides = [:]) {
-        ([
-                testName         : "Finanse 1",
-                descriptionBefore: "opis przed",
-                descriptionAfter : "opis po",
-                statementKeys    : ["p1_q1"]
-        ] + overrides)
-    }
-
     def "should create a test, generate fpt_ testId and resolve statement descriptions"() {
         given:
         seedDefinition("profil_1", "p1_q1")
@@ -415,5 +360,60 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         "CALCULATOR_USER" | 403
         "BUSINESS_ADMIN"  | 200
         "TECH_ADMIN"      | 200
+    }
+
+    private void seedDefinition(String profileId, String statementKey) {
+        def now = Instant.now()
+        def doc = new StatementDefinitionDocument(
+                statementKey: statementKey,
+                profileId: profileId,
+                statementTypeDefinitions: [
+                        new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementKey),
+                        new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementKey)
+                ],
+                isDeleted: false,
+                createdAt: now,
+                updatedAt: now
+        )
+        mongoTemplate.insert(doc).block()
+    }
+
+    private FpTestDocument seedFpTest(String testId, List<String> statementKeys) {
+        def doc = new FpTestDocument()
+        doc.testId = testId
+        doc.testName = "Test " + testId
+        doc.descriptionBefore = "before"
+        doc.descriptionAfter = "after"
+        doc.fpTestStatementDocuments = statementKeys.collect {
+                new FpTestStatementDocument(it, "desc " + it, "PROFIL")
+        }
+        mongoTemplate.insert(doc).block()
+        return doc
+    }
+
+    private void seedSubmissionForTest(String testId,
+                                       SubmissionStatus status = SubmissionStatus.OPEN,
+                                       Instant expireAt = Instant.now().plusSeconds(7 * 24 * 60 * 60)) {
+        def doc = new SubmissionDocument()
+        doc.submissionId = "sub_" + UUID.randomUUID()
+        doc.orderId = "order_" + UUID.randomUUID()
+        doc.clientId = "client-1"
+        doc.clientName = "Jan Kowalski"
+        doc.clientEmail = "jan@example.com"
+        doc.testId = testId
+        doc.status = status
+        doc.durationDays = 7
+        doc.publicToken = "pt_" + UUID.randomUUID()
+        doc.expireAt = expireAt
+        mongoTemplate.insert(doc).block()
+    }
+
+    private static Map fpTestPayload(Map overrides = [:]) {
+        ([
+                testName         : "Finanse 1",
+                descriptionBefore: "opis przed",
+                descriptionAfter : "opis po",
+                statementKeys    : ["p1_q1"]
+        ] + overrides)
     }
 }

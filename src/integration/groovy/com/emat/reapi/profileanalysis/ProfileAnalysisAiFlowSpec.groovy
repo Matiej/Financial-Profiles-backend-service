@@ -50,6 +50,46 @@ class ProfileAnalysisAiFlowSpec extends BaseIntegrationSpec {
         stubOpenAiOk()
     }
 
+    def "should run the full AI analysis flow and persist an InsightReport"() {
+        given:
+        seedClientTest("sub_ai")
+
+        when: "the analysis is enqueued"
+        authenticatedPost("/api/analysis/sub_ai", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isAccepted()
+
+        then: "the async pipeline eventually persists the report and marks the job DONE"
+        new PollingConditions(timeout: 20, delay: 0.3).eventually {
+            def reports = mongoTemplate.findAll(InsightReportDocument).collectList().block()
+            reports.size() == 1
+            reports[0].submissionId == "sub_ai"
+            reports[0].testName == "Test finansowy"
+
+            def job = mongoTemplate.findAll(ReportJobDocument).collectList().block()
+                    .find { it.submissionId == "sub_ai" }
+            job?.status == ReportJobStatus.DONE
+        }
+
+        and: "OpenAI was called"
+        openAi.verify(postRequestedFor(urlPathMatching(".*/chat/completions")))
+    }
+
+    def "should mark the job FAILED when no client test exists for the submission"() {
+        when: "enqueue for a submission with no ClientTest seeded"
+        authenticatedPost("/api/analysis/sub_missing", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isAccepted()
+
+        then: "the job ends FAILED and OpenAI is never called"
+        new PollingConditions(timeout: 10, delay: 0.3).eventually {
+            def job = mongoTemplate.findAll(ReportJobDocument).collectList().block()
+                    .find { it.submissionId == "sub_missing" }
+            job?.status == ReportJobStatus.FAILED
+        }
+
+        and:
+        openAi.verify(0, postRequestedFor(urlPathMatching(".*/chat/completions")))
+    }
+
     private static void stubOpenAiOk() {
         // content must be a schema-valid InsightReport (ai/schemas/open_ai_json_schema_v1.json)
         def insight = MAPPER.writeValueAsString([
@@ -100,45 +140,5 @@ class ProfileAnalysisAiFlowSpec extends BaseIntegrationSpec {
                 new ClientTestAnswerDocument("p1_q2", "profil_1", "lim2", "sup2", 2)
         ]
         mongoTemplate.insert(doc).block()
-    }
-
-    def "should run the full AI analysis flow and persist an InsightReport"() {
-        given:
-        seedClientTest("sub_ai")
-
-        when: "the analysis is enqueued"
-        authenticatedPost("/api/analysis/sub_ai", "BUSINESS_ADMIN").exchange()
-                .expectStatus().isAccepted()
-
-        then: "the async pipeline eventually persists the report and marks the job DONE"
-        new PollingConditions(timeout: 20, delay: 0.3).eventually {
-            def reports = mongoTemplate.findAll(InsightReportDocument).collectList().block()
-            reports.size() == 1
-            reports[0].submissionId == "sub_ai"
-            reports[0].testName == "Test finansowy"
-
-            def job = mongoTemplate.findAll(ReportJobDocument).collectList().block()
-                    .find { it.submissionId == "sub_ai" }
-            job?.status == ReportJobStatus.DONE
-        }
-
-        and: "OpenAI was called"
-        openAi.verify(postRequestedFor(urlPathMatching(".*/chat/completions")))
-    }
-
-    def "should mark the job FAILED when no client test exists for the submission"() {
-        when: "enqueue for a submission with no ClientTest seeded"
-        authenticatedPost("/api/analysis/sub_missing", "BUSINESS_ADMIN").exchange()
-                .expectStatus().isAccepted()
-
-        then: "the job ends FAILED and OpenAI is never called"
-        new PollingConditions(timeout: 10, delay: 0.3).eventually {
-            def job = mongoTemplate.findAll(ReportJobDocument).collectList().block()
-                    .find { it.submissionId == "sub_missing" }
-            job?.status == ReportJobStatus.FAILED
-        }
-
-        and:
-        openAi.verify(0, postRequestedFor(urlPathMatching(".*/chat/completions")))
     }
 }

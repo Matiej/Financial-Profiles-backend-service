@@ -29,27 +29,6 @@ class MinimizerServiceSpec extends Specification {
 
     def service = new MinimizerServiceImpl()
 
-    // ---- fixtures ----
-
-    private static ProfiledStatement stmt(String desc, StatementType type, Boolean status) {
-        new ProfiledStatement(desc, type, status)
-    }
-
-    private static ProfiledCategoryClientStatements category(String name, int totalLimiting, int totalSupporting,
-                                                             List<ProfiledStatement> statements) {
-        new ProfiledCategoryClientStatements(new ProfileCategory(name, name + " label"), totalLimiting, totalSupporting, statements)
-    }
-
-    private static ProfiledClientAnswerDetails details(List<ProfiledCategoryClientStatements> categories) {
-        new ProfiledClientAnswerDetails("Anna", "client-1", "sub-1", Instant.parse("2025-06-01T10:00:00Z"), "Test 1", categories)
-    }
-
-    private static List<ProfiledStatement> nLimiting(int n) {
-        (1..n).collect { stmt("lim-" + it, StatementType.LIMITING, true) }
-    }
-
-    // ---- mode caps ----
-
     def "FULL mode returns all matching evidence"() {
         given:
         def cat = category("A", 3, 2, [
@@ -194,5 +173,24 @@ class MinimizerServiceSpec extends Specification {
         then:
         result.categories[0].limitingEvidence == ["only-one"]
         result.categories[0].supportingEvidence.isEmpty()
+    }
+
+    // ---- fixtures ----
+
+    private static ProfiledStatement stmt(String desc, StatementType type, Boolean status) {
+        new ProfiledStatement(desc, type, status)
+    }
+
+    private static ProfiledCategoryClientStatements category(String name, int totalLimiting, int totalSupporting,
+                                                             List<ProfiledStatement> statements) {
+        new ProfiledCategoryClientStatements(new ProfileCategory(name, name + " label"), totalLimiting, totalSupporting, statements)
+    }
+
+    private static ProfiledClientAnswerDetails details(List<ProfiledCategoryClientStatements> categories) {
+        new ProfiledClientAnswerDetails("Anna", "client-1", "sub-1", Instant.parse("2025-06-01T10:00:00Z"), "Test 1", categories)
+    }
+
+    private static List<ProfiledStatement> nLimiting(int n) {
+        (1..n).collect { stmt("lim-" + it, StatementType.LIMITING, true) }
     }
 }

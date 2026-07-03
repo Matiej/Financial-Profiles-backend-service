@@ -14,17 +14,6 @@ import org.springframework.http.MediaType
  */
 class UserControllerSpec extends KeycloakWireMockSpec {
 
-    private static Map userPayload(Map overrides = [:]) {
-        ([
-                username     : "jan.kowalski",
-                firstName    : "Jan",
-                lastName     : "Kowalski",
-                email        : "jan@example.com",
-                enabled      : true,
-                emailVerified: true
-        ] + overrides)
-    }
-
     def "should list calculator users sorted by createdAt descending"() {
         given:
         stubListUsers(usersArrayJson([
@@ -137,5 +126,16 @@ class UserControllerSpec extends KeycloakWireMockSpec {
 
         then:
         response.expectStatus().isAccepted()
+    }
+
+    private static Map userPayload(Map overrides = [:]) {
+        ([
+                username     : "jan.kowalski",
+                firstName    : "Jan",
+                lastName     : "Kowalski",
+                email        : "jan@example.com",
+                enabled      : true,
+                emailVerified: true
+        ] + overrides)
     }
 }

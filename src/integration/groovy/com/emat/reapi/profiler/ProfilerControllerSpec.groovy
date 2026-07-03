@@ -28,47 +28,8 @@ import java.time.Instant
  */
 class ProfilerControllerSpec extends BaseIntegrationSpec {
 
-    // ---- seed helpers ----
-
-    // Profile label snapshots, keyed by profileId, mirroring what ClientTestServiceImpl freezes
-    // into a completed test at save time. Scoring (F5+) reads labels from these, not the live profile.
     private static final Map<String, ProfileSnapshot> SNAPSHOTS =
             ProfilesSeed.ALL.collectEntries { [(it.id): ProfileSnapshot.of(it)] }
-
-    /**
-     * Seeds a completed client test (the record created after a client submits answers).
-     * This is the document read by the ProfilerController scoring endpoints.
-     */
-    private ClientTestDocument seedClientTest(String testSubmissionPublicId,
-                                              String submissionId,
-                                              String testId,
-                                              List<ClientTestAnswerDocument> answers) {
-        def doc = new ClientTestDocument()
-        doc.testSubmissionPublicId = testSubmissionPublicId
-        doc.submissionId = submissionId
-        doc.clientId = "client-1"
-        doc.clientName = "Anna Testowa"
-        doc.clientEmail = "anna@example.com"
-        doc.testId = testId
-        doc.testName = "Test " + testId
-        doc.submissionDate = Instant.now()
-        doc.publicToken = "pt_" + testSubmissionPublicId
-        doc.answers = answers
-        doc.profileSnapshots = answers.collect { it.profileId }.unique()
-                .collectEntries { [(it): SNAPSHOTS[it]] }
-        mongoTemplate.insert(doc).block()
-        return doc
-    }
-
-    private static ClientTestAnswerDocument answer(String questionKey, String profileId, int scoring) {
-        new ClientTestAnswerDocument(
-                questionKey,
-                profileId,
-                "ograniczajace " + questionKey,
-                "wspierajace " + questionKey,
-                scoring
-        )
-    }
 
     def "should return 200 with an empty scoring list when no client tests exist"() {
         when:
@@ -125,8 +86,6 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         result[0].totalScoring == 4
         result[0].numberOfStatements == 4
     }
-
-    // ---- GET /api/profiler/{id}/scoring — detailed scoring for one ClientTest ----
 
     def "should return 404 for an unknown testSubmissionPublicId on scoring details"() {
         when:
@@ -265,8 +224,6 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         result.profiles[0].answersBySeverity[1].scoring == 2
     }
 
-    // ---- security ----
-
     def "should return 401 for GET /api/profiler/scoring without a token"() {
         when:
         def response = webTestClient.get().uri("/api/profiler/scoring").exchange()
@@ -288,5 +245,40 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         "CALCULATOR_USER" | 403
         "BUSINESS_ADMIN"  | 200
         "TECH_ADMIN"      | 200
+    }
+
+    /**
+     * Seeds a completed client test (the record created after a client submits answers).
+     * This is the document read by the ProfilerController scoring endpoints.
+     */
+    private ClientTestDocument seedClientTest(String testSubmissionPublicId,
+                                              String submissionId,
+                                              String testId,
+                                              List<ClientTestAnswerDocument> answers) {
+        def doc = new ClientTestDocument()
+        doc.testSubmissionPublicId = testSubmissionPublicId
+        doc.submissionId = submissionId
+        doc.clientId = "client-1"
+        doc.clientName = "Anna Testowa"
+        doc.clientEmail = "anna@example.com"
+        doc.testId = testId
+        doc.testName = "Test " + testId
+        doc.submissionDate = Instant.now()
+        doc.publicToken = "pt_" + testSubmissionPublicId
+        doc.answers = answers
+        doc.profileSnapshots = answers.collect { it.profileId }.unique()
+                .collectEntries { [(it): SNAPSHOTS[it]] }
+        mongoTemplate.insert(doc).block()
+        return doc
+    }
+
+    private static ClientTestAnswerDocument answer(String questionKey, String profileId, int scoring) {
+        new ClientTestAnswerDocument(
+                questionKey,
+                profileId,
+                "ograniczajace " + questionKey,
+                "wspierajace " + questionKey,
+                scoring
+        )
     }
 }

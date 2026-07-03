@@ -32,7 +32,7 @@ import java.time.Instant
 class FpTestControllerSpec extends BaseIntegrationSpec {
 
     // FpTest serves the live profile name (plName) per statement; seed the standard
-    // profiles so statementsCategory resolves to plName instead of falling back to profileId.
+    // profiles so statementsProfile resolves to plName instead of falling back to profileId.
     def setup() {
         ProfilesSeed.ALL.each { mongoTemplate.insert(ProfileDocument.toDocument(it)).block() }
     }
@@ -57,7 +57,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         result.fpTestStatementDtoList.size() == 1
         result.fpTestStatementDtoList[0].statementKey == "p1_q1"
         result.fpTestStatementDtoList[0].statementsDescription == "ograniczajace p1_q1-wspierajace p1_q1"
-        result.fpTestStatementDtoList[0].statementsCategory == "Strażniczka Braku"
+        result.fpTestStatementDtoList[0].statementsProfile == "Strażniczka Braku"
         result.submissionIds.size() == 0
 
         and:

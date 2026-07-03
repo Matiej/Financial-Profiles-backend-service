@@ -52,7 +52,7 @@ public class FpTestDocument {
                 .map(st -> new FpTestStatementDocument(
                                 st.statementKey(),
                                 st.statementsDescription(),
-                                st.statementsCategory()
+                                st.statementsProfile()
                         )
                 )
                 .toList());
@@ -65,7 +65,7 @@ public class FpTestDocument {
                 .map(stDoc -> new FpTestStatement(
                                 stDoc.statementKey(),
                                 stDoc.statementsDescription(),
-                                stDoc.statementsCategory()
+                                stDoc.statementsProfile()
                         )
                 )
                 .toList();

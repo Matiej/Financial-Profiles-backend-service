@@ -9,10 +9,10 @@ import java.util.Map;
 public record FpTestStatement(
         String statementKey,
         String statementsDescription,
-        String statementsCategory
+        String statementsProfile
 ) {
 
-    // statementsCategory carries the live profile name (plName), resolved from profileNamesById;
+    // statementsProfile carries the live profile name (plName), resolved from profileNamesById;
     // falls back to the raw profileId when the profile is missing (e.g. soft-deleted).
     public static FpTestStatement formStatementDefinition(StatementDefinition statementDefinition,
                                                           Map<String, String> profileNamesById) {

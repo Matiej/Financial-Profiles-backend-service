@@ -49,57 +49,6 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         wireMock.resetAll()
     }
 
-    // ---- seed helpers ----
-
-    private StatementDefinitionDocument seedDefinition(String profileId, String statementKey) {
-        def now = Instant.now()
-        def doc = new StatementDefinitionDocument(
-                statementKey: statementKey,
-                profileId: profileId,
-                statementTypeDefinitions: [
-                        new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementKey),
-                        new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementKey)
-                ],
-                isDeleted: false,
-                createdAt: now,
-                updatedAt: now
-        )
-        mongoTemplate.insert(doc).block()
-    }
-
-    private FpTestDocument seedFpTest(String testId, List<String> statementKeys) {
-        def doc = new FpTestDocument()
-        doc.testId = testId
-        doc.testName = "Test " + testId
-        doc.fpTestStatementDocuments = statementKeys.collect { key ->
-            new FpTestStatementDocument(key, "desc-" + key, "Strażniczka Braku")
-        }
-        mongoTemplate.insert(doc).block()
-    }
-
-    private SubmissionDocument seedSubmission(String submissionId, String testId, String publicToken,
-                                              SubmissionStatus status = SubmissionStatus.OPEN,
-                                              Instant expireAt = Instant.now().plusSeconds(7 * 24 * 60 * 60)) {
-        def doc = new SubmissionDocument()
-        doc.submissionId = submissionId
-        doc.testId = testId
-        doc.publicToken = publicToken
-        doc.clientId = "client-1"
-        doc.clientName = "Jan Kowalski"
-        doc.clientEmail = "jan@example.com"
-        doc.orderId = "order-1_" + UUID.randomUUID()
-        doc.status = status
-        doc.durationDays = 7
-        doc.expireAt = expireAt
-        mongoTemplate.insert(doc).block()
-    }
-
-    private static void stubN8nOk() {
-        wireMock.stubFor(post(urlEqualTo("/score-test/email")).willReturn(ok()))
-    }
-
-    // ---- GET /api/client/test/{publicToken} ----
-
     def "should return 200 with questions for a valid public token"() {
         given:
         seedDefinition("profil_1", "p1_q1")
@@ -166,8 +115,6 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         then:
         response.expectStatus().isNotFound()
     }
-
-    // ---- POST /api/client/test ----
 
     def "should save answers, close submission to DONE and notify n8n"() {
         given:
@@ -318,8 +265,6 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         response.expectStatus().isCreated()
     }
 
-    // ---- E2E ----
-
     def "should complete full E2E flow: GET test, POST answers, verify submission DONE"() {
         given:
         stubN8nOk()
@@ -359,5 +304,52 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
 
         and: "n8n was notified exactly once"
         wireMock.verify(1, postRequestedFor(urlEqualTo("/score-test/email")))
+    }
+
+    private StatementDefinitionDocument seedDefinition(String profileId, String statementKey) {
+        def now = Instant.now()
+        def doc = new StatementDefinitionDocument(
+                statementKey: statementKey,
+                profileId: profileId,
+                statementTypeDefinitions: [
+                        new StatementTypeDefinition(StatementType.LIMITING, "ograniczajace " + statementKey),
+                        new StatementTypeDefinition(StatementType.SUPPORTING, "wspierajace " + statementKey)
+                ],
+                isDeleted: false,
+                createdAt: now,
+                updatedAt: now
+        )
+        mongoTemplate.insert(doc).block()
+    }
+
+    private FpTestDocument seedFpTest(String testId, List<String> statementKeys) {
+        def doc = new FpTestDocument()
+        doc.testId = testId
+        doc.testName = "Test " + testId
+        doc.fpTestStatementDocuments = statementKeys.collect { key ->
+            new FpTestStatementDocument(key, "desc-" + key, "Strażniczka Braku")
+        }
+        mongoTemplate.insert(doc).block()
+    }
+
+    private SubmissionDocument seedSubmission(String submissionId, String testId, String publicToken,
+                                              SubmissionStatus status = SubmissionStatus.OPEN,
+                                              Instant expireAt = Instant.now().plusSeconds(7 * 24 * 60 * 60)) {
+        def doc = new SubmissionDocument()
+        doc.submissionId = submissionId
+        doc.testId = testId
+        doc.publicToken = publicToken
+        doc.clientId = "client-1"
+        doc.clientName = "Jan Kowalski"
+        doc.clientEmail = "jan@example.com"
+        doc.orderId = "order-1_" + UUID.randomUUID()
+        doc.status = status
+        doc.durationDays = 7
+        doc.expireAt = expireAt
+        mongoTemplate.insert(doc).block()
+    }
+
+    private static void stubN8nOk() {
+        wireMock.stubFor(post(urlEqualTo("/score-test/email")).willReturn(ok()))
     }
 }

@@ -21,50 +21,6 @@ import java.time.Instant
  */
 class SubmissionControllerSpec extends BaseIntegrationSpec {
 
-    private static Map submissionPayload(Map overrides = [:]) {
-        ([
-                clientId    : "client-1",
-                clientName  : "Jan Kowalski",
-                clientEmail : "jan@example.com",
-                orderId     : "order-1",
-                testId      : "test-1",
-                durationDays: 7
-        ] + overrides)
-    }
-
-    private SubmissionDocument seedSubmission(String submissionId, SubmissionStatus status, Map overrides = [:]) {
-        def doc = new SubmissionDocument()
-        doc.submissionId = submissionId
-        doc.orderId = (overrides.orderId ?: "order_" + submissionId) + "_" + UUID.randomUUID()
-        doc.clientId = "client-1"
-        doc.clientName = "Jan Kowalski"
-        doc.clientEmail = "jan@example.com"
-        doc.testId = overrides.testId ?: "test-1"
-        doc.status = status
-        doc.durationDays = (overrides.durationDays ?: 7) as int
-        doc.publicToken = "pt_" + UUID.randomUUID()
-        doc.expireAt = overrides.expireAt ?: Instant.now().plusSeconds(7 * 24 * 60 * 60)
-        if (overrides.createdAt) {
-            doc.createdAt = overrides.createdAt as Instant
-        }
-        mongoTemplate.insert(doc).block()
-        return doc
-    }
-
-    // A submission may only target an existing, non-deleted FpTest (F8.5 token-revival guard),
-    // so create/update happy paths seed one. testName on the response resolves from it.
-    private FpTestDocument seedTest(String testId, Map overrides = [:]) {
-        def doc = new FpTestDocument()
-        doc.testId = testId
-        doc.testName = overrides.testName ?: "Test " + testId
-        doc.descriptionBefore = "before"
-        doc.descriptionAfter = "after"
-        doc.fpTestStatementDocuments = []
-        doc.isDeleted = (overrides.isDeleted ?: false) as boolean
-        mongoTemplate.insert(doc).block()
-        return doc
-    }
-
     def "should create a submission, generate ids and persist it as OPEN"() {
         given:
         seedTest("test-1", [testName: "Zestaw Finansowy"])
@@ -459,5 +415,49 @@ class SubmissionControllerSpec extends BaseIntegrationSpec {
         "CALCULATOR_USER" | 403
         "BUSINESS_ADMIN"  | 200
         "TECH_ADMIN"      | 200
+    }
+
+    private static Map submissionPayload(Map overrides = [:]) {
+        ([
+                clientId    : "client-1",
+                clientName  : "Jan Kowalski",
+                clientEmail : "jan@example.com",
+                orderId     : "order-1",
+                testId      : "test-1",
+                durationDays: 7
+        ] + overrides)
+    }
+
+    private SubmissionDocument seedSubmission(String submissionId, SubmissionStatus status, Map overrides = [:]) {
+        def doc = new SubmissionDocument()
+        doc.submissionId = submissionId
+        doc.orderId = (overrides.orderId ?: "order_" + submissionId) + "_" + UUID.randomUUID()
+        doc.clientId = "client-1"
+        doc.clientName = "Jan Kowalski"
+        doc.clientEmail = "jan@example.com"
+        doc.testId = overrides.testId ?: "test-1"
+        doc.status = status
+        doc.durationDays = (overrides.durationDays ?: 7) as int
+        doc.publicToken = "pt_" + UUID.randomUUID()
+        doc.expireAt = overrides.expireAt ?: Instant.now().plusSeconds(7 * 24 * 60 * 60)
+        if (overrides.createdAt) {
+            doc.createdAt = overrides.createdAt as Instant
+        }
+        mongoTemplate.insert(doc).block()
+        return doc
+    }
+
+    // A submission may only target an existing, non-deleted FpTest (F8.5 token-revival guard),
+    // so create/update happy paths seed one. testName on the response resolves from it.
+    private FpTestDocument seedTest(String testId, Map overrides = [:]) {
+        def doc = new FpTestDocument()
+        doc.testId = testId
+        doc.testName = overrides.testName ?: "Test " + testId
+        doc.descriptionBefore = "before"
+        doc.descriptionAfter = "after"
+        doc.fpTestStatementDocuments = []
+        doc.isDeleted = (overrides.isDeleted ?: false) as boolean
+        mongoTemplate.insert(doc).block()
+        return doc
     }
 }

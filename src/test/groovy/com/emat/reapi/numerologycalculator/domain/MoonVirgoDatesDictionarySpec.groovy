@@ -15,10 +15,6 @@ import java.time.ZoneOffset
  */
 class MoonVirgoDatesDictionarySpec extends Specification {
 
-    private static Instant at(String isoDate) {
-        LocalDate.parse(isoDate).atStartOfDay().toInstant(ZoneOffset.UTC)
-    }
-
     def "getAll returns all 11 entries"() {
         expect:
         MoonVirgoDatesDictionary.getAll().size() == 11
@@ -70,5 +66,9 @@ class MoonVirgoDatesDictionarySpec extends Specification {
         next == null || MoonVirgoDatesDictionary.getAll()
                 .findAll { it.startDate().isAfter(now) }
                 .every { !it.startDate().isBefore(next.startDate()) }
+    }
+
+    private static Instant at(String isoDate) {
+        LocalDate.parse(isoDate).atStartOfDay().toInstant(ZoneOffset.UTC)
     }
 }

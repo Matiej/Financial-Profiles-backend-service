@@ -24,8 +24,6 @@ import spock.lang.Unroll
  */
 class SecurityAccessControlSpec extends BaseIntegrationSpec {
 
-    // ---- 1. Public endpoints — no auth required ----
-
     @Unroll
     def "should reach public GET #uri without a token (status #expectedStatus)"() {
         when:
@@ -50,8 +48,6 @@ class SecurityAccessControlSpec extends BaseIntegrationSpec {
         then:
         response.expectStatus().value({ assert it != 401 && it != 403 })
     }
-
-    // ---- 2. Protected endpoints — no auth → 401 ----
 
     @Unroll
     def "should return 401 for GET #uri without a token"() {
@@ -85,8 +81,6 @@ class SecurityAccessControlSpec extends BaseIntegrationSpec {
         response.expectStatus().isUnauthorized()
     }
 
-    // ---- 3. CALCULATOR_USER — forbidden on admin-only /api/** endpoints ----
-
     @Unroll
     def "should return 403 for CALCULATOR_USER on admin endpoint #uri"() {
         when:
@@ -107,8 +101,6 @@ class SecurityAccessControlSpec extends BaseIntegrationSpec {
         ]
     }
 
-    // ---- 4. CALCULATOR_USER — can access ncalculator and account ----
-
     def "should grant CALCULATOR_USER access to /api/ncalculator/phrase"() {
         when:
         def response = authenticatedPost("/api/ncalculator/phrase", "CALCULATOR_USER")
@@ -128,8 +120,6 @@ class SecurityAccessControlSpec extends BaseIntegrationSpec {
         then:
         response.expectStatus().value({ assert it != 401 && it != 403 })
     }
-
-    // ---- 5. BUSINESS_ADMIN and TECH_ADMIN — access to all protected endpoints ----
 
     @Unroll
     def "should return 200 for #role on GET #uri"() {

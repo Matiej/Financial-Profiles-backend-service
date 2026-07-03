@@ -20,27 +20,9 @@ import java.time.Instant
  */
 class ClientTestProfiledMapperSpec extends Specification {
 
-    private static ClientTestAnswer answer(String key, String profileId, int scoring) {
-        new ClientTestAnswer(key, profileId, "lim-" + key, "sup-" + key, scoring)
-    }
-
     // Profile label snapshots keyed by profileId, mirroring what is frozen into a completed test.
     private static final Map<String, ProfileSnapshot> SNAPSHOTS =
             ProfilesSeed.ALL.collectEntries { [(it.id): ProfileSnapshot.of(it)] }
-
-    private static ClientTestSubmission submission(List<ClientTestAnswer> answers) {
-        def s = new ClientTestSubmission()
-        s.clientName = "Anna"
-        s.clientId = "client-1"
-        s.submissionId = "sub-1"
-        s.submissionDate = Instant.parse("2025-06-01T10:00:00Z")
-        s.testId = "fpt-1"
-        s.testName = "Test 1"
-        s.clientTestAnswerList = answers
-        s.profileSnapshots = answers == null ? [:] : answers.collect { it.profileId() }.unique()
-                .collectEntries { [(it): SNAPSHOTS[it]] }
-        return s
-    }
 
     def "negative scoring becomes an active LIMITING statement"() {
         when:
@@ -144,5 +126,23 @@ class ClientTestProfiledMapperSpec extends Specification {
         then:
         result.profiledCategoryClientStatementsList.isEmpty()
         result.clientName == "Anna"
+    }
+
+    private static ClientTestAnswer answer(String key, String profileId, int scoring) {
+        new ClientTestAnswer(key, profileId, "lim-" + key, "sup-" + key, scoring)
+    }
+
+    private static ClientTestSubmission submission(List<ClientTestAnswer> answers) {
+        def s = new ClientTestSubmission()
+        s.clientName = "Anna"
+        s.clientId = "client-1"
+        s.submissionId = "sub-1"
+        s.submissionDate = Instant.parse("2025-06-01T10:00:00Z")
+        s.testId = "fpt-1"
+        s.testName = "Test 1"
+        s.clientTestAnswerList = answers
+        s.profileSnapshots = answers == null ? [:] : answers.collect { it.profileId() }.unique()
+                .collectEntries { [(it): SNAPSHOTS[it]] }
+        return s
     }
 }

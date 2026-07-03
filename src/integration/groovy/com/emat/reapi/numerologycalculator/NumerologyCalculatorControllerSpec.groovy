@@ -15,8 +15,6 @@ import spock.lang.Unroll
  */
 class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
 
-    // --- /phrase -------------------------------------------------------------
-
     def "should compute vowels, consonants and total vibration for a plain phrase"() {
         when:
         def result = authenticatedPost("/api/ncalculator/phrase", "CALCULATOR_USER")
@@ -145,8 +143,6 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
         saved[0].userName == "test-user"
     }
 
-    // --- /dates --------------------------------------------------------------
-
     def "should compute the deterministic date fields from the request"() {
         when:
         def result = authenticatedPost("/api/ncalculator/dates", "CALCULATOR_USER")
@@ -248,8 +244,6 @@ class NumerologyCalculatorControllerSpec extends BaseIntegrationSpec {
         saved[0].mainVibration == "33/6"
         saved[0].userName == "test-user"
     }
-
-    // --- security ------------------------------------------------------------
 
     @Unroll
     def "should return 401 for POST #uri without a token"() {

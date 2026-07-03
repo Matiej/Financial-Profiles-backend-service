@@ -36,47 +36,6 @@ import java.time.Instant
  */
 class ProfileAnalysisControllerSpec extends BaseIntegrationSpec {
 
-    // ---- seed helpers ----
-
-    private ReportJobDocument seedJob(String submissionId, ReportJobStatus status,
-                                      Instant expireAt = null, PayloadMode mode = PayloadMode.MINIMAL) {
-        def doc = ReportJobDocument.builder()
-                .submissionId(submissionId)
-                .status(status)
-                .mode(mode)
-                .expireAt(expireAt)
-                .build()
-        mongoTemplate.insert(doc).block()
-        return doc
-    }
-
-    /**
-     * Seeds a report and forces its {@code createdAt} to the given instant.
-     * {@code @CreatedDate} auditing overwrites the value on insert (it ignores the
-     * injectable {@link java.time.Clock}), so we set it explicitly with a follow-up
-     * update — {@code @CreatedDate} only fires on creation, not on update.
-     */
-    private InsightReportDocument seedReport(String submissionId, Instant createdAt) {
-        def doc = new InsightReportDocument()
-        doc.submissionId = submissionId
-        doc.clientId = "client-1"
-        doc.clientName = "Anna Testowa"
-        doc.testName = "Test " + submissionId
-        doc.aiModel = "gpt-test"
-        doc.payloadMode = PayloadMode.MINIMAL
-        doc.schemaName = "insight"
-        doc.schemaVersion = "1"
-        doc.reportJson = "{}"
-        doc.insightReportStructuredAiDocument = new InsightReportStructuredAiDocument()
-        def saved = mongoTemplate.insert(doc).block()
-        mongoTemplate.updateFirst(
-                Query.query(Criteria.where("_id").is(saved.id)),
-                Update.update("createdAt", createdAt),
-                InsightReportDocument).block()
-        saved.createdAt = createdAt
-        return saved
-    }
-
     // ---- GET /api/analysis/{submissionId} — stored reports ----
 
     def "should return an empty list when no reports exist for the submission"() {
@@ -234,5 +193,46 @@ class ProfileAnalysisControllerSpec extends BaseIntegrationSpec {
         "CALCULATOR_USER" | 403
         "BUSINESS_ADMIN"  | 204
         "TECH_ADMIN"      | 204
+    }
+
+    // ---- seed helpers ----
+
+    private ReportJobDocument seedJob(String submissionId, ReportJobStatus status,
+                                      Instant expireAt = null, PayloadMode mode = PayloadMode.MINIMAL) {
+        def doc = ReportJobDocument.builder()
+                .submissionId(submissionId)
+                .status(status)
+                .mode(mode)
+                .expireAt(expireAt)
+                .build()
+        mongoTemplate.insert(doc).block()
+        return doc
+    }
+
+    /**
+     * Seeds a report and forces its {@code createdAt} to the given instant.
+     * {@code @CreatedDate} auditing overwrites the value on insert (it ignores the
+     * injectable {@link java.time.Clock}), so we set it explicitly with a follow-up
+     * update — {@code @CreatedDate} only fires on creation, not on update.
+     */
+    private InsightReportDocument seedReport(String submissionId, Instant createdAt) {
+        def doc = new InsightReportDocument()
+        doc.submissionId = submissionId
+        doc.clientId = "client-1"
+        doc.clientName = "Anna Testowa"
+        doc.testName = "Test " + submissionId
+        doc.aiModel = "gpt-test"
+        doc.payloadMode = PayloadMode.MINIMAL
+        doc.schemaName = "insight"
+        doc.schemaVersion = "1"
+        doc.reportJson = "{}"
+        doc.insightReportStructuredAiDocument = new InsightReportStructuredAiDocument()
+        def saved = mongoTemplate.insert(doc).block()
+        mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").is(saved.id)),
+                Update.update("createdAt", createdAt),
+                InsightReportDocument).block()
+        saved.createdAt = createdAt
+        return saved
     }
 }

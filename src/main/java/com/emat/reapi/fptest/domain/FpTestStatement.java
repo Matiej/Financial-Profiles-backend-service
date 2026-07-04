@@ -9,11 +9,14 @@ import java.util.Map;
 public record FpTestStatement(
         String statementKey,
         String statementsDescription,
-        String statementsProfile
+        String statementsProfile,
+        String profileId
 ) {
 
     // statementsProfile carries the live profile name (plName), resolved from profileNamesById;
     // falls back to the raw profileId when the profile is missing (e.g. soft-deleted).
+    // profileId is the stable profile identity (slug), carried alongside the display name so the
+    // FE can group/sort/link without joining back to GET /api/definition.
     public static FpTestStatement formStatementDefinition(StatementDefinition statementDefinition,
                                                           Map<String, String> profileNamesById) {
         var limitingDesc = descriptionFor(statementDefinition, StatementType.LIMITING);
@@ -23,7 +26,8 @@ public record FpTestStatement(
         return new FpTestStatement(
                 statementDefinition.getStatementKey(),
                 desc,
-                profileNamesById.getOrDefault(profileId, profileId)
+                profileNamesById.getOrDefault(profileId, profileId),
+                profileId
         );
     }
 

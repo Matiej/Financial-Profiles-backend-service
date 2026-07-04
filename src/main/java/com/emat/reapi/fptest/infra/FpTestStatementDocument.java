@@ -7,7 +7,8 @@ import java.util.List;
 public record FpTestStatementDocument(
         String statementKey,
         String statementsDescription,
-        String statementsProfile
+        String statementsProfile,
+        String profileId
 ) {
 
     public static List<FpTestStatementDocument> fromDomainlist(List<FpTestStatement> fpTestStatementList) {
@@ -16,7 +17,8 @@ public record FpTestStatementDocument(
                 .map(fpTestStatement -> new FpTestStatementDocument(
                                 fpTestStatement.statementKey(),
                                 fpTestStatement.statementsDescription(),
-                                fpTestStatement.statementsProfile()
+                                fpTestStatement.statementsProfile(),
+                                fpTestStatement.profileId()
                         )
                 ).toList();
     }

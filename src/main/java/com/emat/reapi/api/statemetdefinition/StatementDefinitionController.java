@@ -1,7 +1,7 @@
-package com.emat.reapi.api;
+package com.emat.reapi.api.statemetdefinition;
 
-import com.emat.reapi.api.dto.statement.StatementDefinitionRequest;
-import com.emat.reapi.api.dto.statement.StatementDefinitionResponse;
+import com.emat.reapi.api.dto.statementdefiniton.StatementDefinitionRequest;
+import com.emat.reapi.api.dto.statementdefiniton.StatementDefinitionResponse;
 import com.emat.reapi.statement.port.StatementDefinitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

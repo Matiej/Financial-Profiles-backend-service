@@ -1,7 +1,7 @@
-package com.emat.reapi.api;
+package com.emat.reapi.api.statemetdefinition;
 
-import com.emat.reapi.api.dto.profile.ProfileResponse;
-import com.emat.reapi.api.dto.profile.ProfileUpdateRequest;
+import com.emat.reapi.api.dto.statementdefiniton.ProfileResponse;
+import com.emat.reapi.api.dto.statementdefiniton.ProfileUpdateRequest;
 import com.emat.reapi.statement.port.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

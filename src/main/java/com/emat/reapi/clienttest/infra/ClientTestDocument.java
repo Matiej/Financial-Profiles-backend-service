@@ -37,9 +37,9 @@ public class ClientTestDocument {
     private Instant submissionDate;
     private String publicToken;
     private List<ClientTestAnswerDocument> answers;
-    // Profile labels frozen at save time (profileId -> snapshot), so scoring/AI/report
-    // for this test stay stable even if the live profile is later edited or deleted (F5 reads these).
     private Map<String, ProfileSnapshot> profileSnapshots;
+    private boolean deleted;
+    private Instant deletedAt;
     @CreatedDate
     private Instant createdAt;
     @LastModifiedDate
@@ -89,6 +89,7 @@ public class ClientTestDocument {
         clientTestDocument.setSubmissionDate(submission.getSubmissionDate());
         clientTestDocument.setPublicToken(submission.getPublicToken());
         clientTestDocument.setAnswers(answerDocs);
+        clientTestDocument.setDeleted(false);
         return clientTestDocument;
     }
 }

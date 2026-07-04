@@ -43,8 +43,8 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         result.isEmpty()
     }
 
-    def "should return one short scoring entry per seeded client test"() {
-        given:
+    def "should return one short scoring entry per seeded client test, excluding soft-deleted ones"() {
+        given: "two live tests and one already soft-deleted test"
         seedClientTest("tspi_short-1", "sub_short-1", "fpt_short", [
                 answer("p1_q1", "profil_1", 2),
                 answer("p2_q1", "profil_2", 0)
@@ -52,6 +52,9 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         seedClientTest("tspi_short-2", "sub_short-2", "fpt_short", [
                 answer("p1_q1", "profil_1", 1)
         ])
+        seedClientTest("tspi_short-deleted", "sub_short-deleted", "fpt_short", [
+                answer("p1_q1", "profil_1", 2)
+        ], true)
 
         when:
         def result = authenticatedGet("/api/profiler/scoring", "BUSINESS_ADMIN").exchange()
@@ -60,8 +63,9 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
                 .returnResult()
                 .responseBody
 
-        then:
+        then: "the soft-deleted test is not listed"
         result.size() == 2
+        result.every { it.testSubmissionPublicId != "tspi_short-deleted" }
     }
 
     def "should return correct totals in a short scoring entry"() {
@@ -247,6 +251,39 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         "TECH_ADMIN"      | 200
     }
 
+    def "should soft-delete a client test so it is excluded from scoring reads (idempotent)"() {
+        given:
+        seedClientTest("tspi_del", "sub_del", "fpt_del", [
+                answer("p1_q1", "profil_1", 2)
+        ])
+
+        when: "admin soft-deletes the test by testSubmissionPublicId"
+        def response = authenticatedDelete("/api/profiler/tspi_del", "BUSINESS_ADMIN").exchange()
+
+        then: "204 and the test disappears from both scoring reads"
+        response.expectStatus().isNoContent()
+        authenticatedGet("/api/profiler/scoring", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Map)
+                .returnResult()
+                .responseBody
+                .isEmpty()
+        authenticatedGet("/api/profiler/tspi_del/scoring", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isNotFound()
+
+        and: "deleting again is an idempotent no-op → still 204"
+        authenticatedDelete("/api/profiler/tspi_del", "BUSINESS_ADMIN").exchange()
+                .expectStatus().isNoContent()
+    }
+
+    def "should return 404 when soft-deleting an unknown testSubmissionPublicId"() {
+        when:
+        def response = authenticatedDelete("/api/profiler/tspi_missing", "BUSINESS_ADMIN").exchange()
+
+        then:
+        response.expectStatus().isNotFound()
+    }
+
     /**
      * Seeds a completed client test (the record created after a client submits answers).
      * This is the document read by the ProfilerController scoring endpoints.
@@ -255,6 +292,14 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
                                               String submissionId,
                                               String testId,
                                               List<ClientTestAnswerDocument> answers) {
+        seedClientTest(testSubmissionPublicId, submissionId, testId, answers, false)
+    }
+
+    private ClientTestDocument seedClientTest(String testSubmissionPublicId,
+                                              String submissionId,
+                                              String testId,
+                                              List<ClientTestAnswerDocument> answers,
+                                              boolean deleted) {
         def doc = new ClientTestDocument()
         doc.testSubmissionPublicId = testSubmissionPublicId
         doc.submissionId = submissionId
@@ -268,6 +313,10 @@ class ProfilerControllerSpec extends BaseIntegrationSpec {
         doc.answers = answers
         doc.profileSnapshots = answers.collect { it.profileId }.unique()
                 .collectEntries { [(it): SNAPSHOTS[it]] }
+        doc.deleted = deleted
+        if (deleted) {
+            doc.deletedAt = Instant.now()
+        }
         mongoTemplate.insert(doc).block()
         return doc
     }

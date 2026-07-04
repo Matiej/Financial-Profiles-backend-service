@@ -1,6 +1,7 @@
 package com.emat.reapi.config.error;
 
 import com.emat.reapi.clienttest.ClientTestException;
+import com.emat.reapi.clienttest.ClientTestSubmissionException;
 import com.emat.reapi.fptest.FpTestStateException;
 import com.emat.reapi.profiler.ProfilerException;
 import com.emat.reapi.statement.ProfileStateException;
@@ -64,6 +65,21 @@ public class GlobalExceptionHandler {
                 status.value(),
                 status.getReasonPhrase(),
                 "CLIENT_TEST_ERROR",
+                ex.getMessage(),
+                request.getPath().value(),
+                null
+        );
+        return ResponseEntity.status(status).body(errorResponse);
+    }
+
+    @ExceptionHandler(ClientTestSubmissionException.class)
+    public ResponseEntity<ErrorResponse> clientTestSubmissionException(ClientTestSubmissionException ex, ServerHttpRequest request) {
+        log.warn("ClientTestSubmissionException: {}", ex.getMessage(), ex);
+        HttpStatus status = ex.getStatus();
+        ErrorResponse errorResponse = ErrorResponse.of(
+                status.value(),
+                status.getReasonPhrase(),
+                "CLIENT_TEST_SUBMISSION_ERROR",
                 ex.getMessage(),
                 request.getPath().value(),
                 null

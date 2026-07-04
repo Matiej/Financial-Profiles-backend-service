@@ -1,37 +1,45 @@
 package com.emat.reapi.infrastructure.n8n;
 
-import com.emat.reapi.clienttest.domain.ClientTestSubmission;
+import com.emat.reapi.profiler.domain.ScoringProfiledClientDetails;
 
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * v2 payload for the n8n email webhook ({@code POST /score-test/email}): carries the already-computed
+ * scoring (same shape as {@code GET /api/profiler/{tspi}/scoring}) plus the mail recipient and dates.
+ * Own DTO on purpose — the outbound contract stays decoupled from the internal scoring DTO.
+ */
 public record ClientScoreTestNotification(
+        String testSubmissionPublicId,
         String clientName,
         String clientId,
         String clientEmail,
-        Instant clientAnswerDate,
-        String testName,
-        String testId,
         String submissionId,
         Instant submissionDate,
-        List<ClientAnswerNotification> clientTestAnswerNotificationList
-
+        Instant clientTestDate,
+        String testId,
+        String testName,
+        OverallSummaryNotification overallSummary,
+        List<ProfileBlockNotification> profiles
 ) {
-    public static ClientScoreTestNotification fromDomain(ClientTestSubmission submission) {
-        List<ClientAnswerNotification> clientTestAnswerNotifications = submission.getClientTestAnswerList()
-                .stream()
-                .map(ClientAnswerNotification::fromDomain)
-                .toList();
+    public static ClientScoreTestNotification of(
+            ScoringProfiledClientDetails details,
+            String clientEmail,
+            Instant clientTestDate
+    ) {
         return new ClientScoreTestNotification(
-                submission.getClientName(),
-                submission.getClientId(),
-                submission.getClientEmail(),
-                submission.getCreatedAt(),
-                submission.getTestName(),
-                submission.getTestId(),
-                submission.getSubmissionId(),
-                submission.getSubmissionDate(),
-                clientTestAnswerNotifications
+                details.getTestSubmissionPublicId(),
+                details.getClientName(),
+                details.getClientId(),
+                clientEmail,
+                details.getSubmissionId(),
+                details.getSubmissionDate(),
+                clientTestDate,
+                details.getTestId(),
+                details.getTestName(),
+                OverallSummaryNotification.of(details.getOverallSummary()),
+                details.getProfiles().stream().map(ProfileBlockNotification::of).toList()
         );
     }
 }

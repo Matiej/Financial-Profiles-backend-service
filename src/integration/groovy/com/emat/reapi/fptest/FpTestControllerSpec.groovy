@@ -58,6 +58,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         result.fpTestStatementDtoList[0].statementKey == "p1_q1"
         result.fpTestStatementDtoList[0].statementsDescription == "ograniczajace p1_q1-wspierajace p1_q1"
         result.fpTestStatementDtoList[0].statementsProfile == "Strażniczka Braku"
+        result.fpTestStatementDtoList[0].profileId == "profil_1"
         result.submissionIds.size() == 0
 
         and:
@@ -385,7 +386,7 @@ class FpTestControllerSpec extends BaseIntegrationSpec {
         doc.descriptionBefore = "before"
         doc.descriptionAfter = "after"
         doc.fpTestStatementDocuments = statementKeys.collect {
-                new FpTestStatementDocument(it, "desc " + it, "PROFIL")
+                new FpTestStatementDocument(it, "desc " + it, "PROFIL", "profil_1")
         }
         mongoTemplate.insert(doc).block()
         return doc

@@ -380,7 +380,7 @@ class StatementDefinitionControllerSpec extends BaseIntegrationSpec {
         doc.descriptionBefore = "before"
         doc.descriptionAfter = "after"
         doc.fpTestStatementDocuments = statementKeys.collect {
-                new FpTestStatementDocument(it, "desc " + it, "PROFIL")
+                new FpTestStatementDocument(it, "desc " + it, "PROFIL", "profil_1")
         }
         mongoTemplate.insert(doc).block()
     }

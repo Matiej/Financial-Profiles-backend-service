@@ -327,7 +327,7 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
         doc.testId = testId
         doc.testName = "Test " + testId
         doc.fpTestStatementDocuments = statementKeys.collect { key ->
-            new FpTestStatementDocument(key, "desc-" + key, "Strażniczka Braku")
+            new FpTestStatementDocument(key, "desc-" + key, "Strażniczka Braku", "profil_1")
         }
         mongoTemplate.insert(doc).block()
     }

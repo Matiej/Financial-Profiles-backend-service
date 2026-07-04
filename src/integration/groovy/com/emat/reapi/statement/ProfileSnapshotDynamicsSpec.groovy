@@ -189,7 +189,7 @@ class ProfileSnapshotDynamicsSpec extends BaseIntegrationSpec {
         doc.testId = testId
         doc.testName = "Test " + testId
         doc.fpTestStatementDocuments = statementKeys.collect {
-                new FpTestStatementDocument(it, "desc " + it, "PROFIL")
+                new FpTestStatementDocument(it, "desc " + it, "PROFIL", "profil_1")
         }
         mongoTemplate.insert(doc).block()
     }

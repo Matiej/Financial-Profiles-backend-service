@@ -41,12 +41,3 @@ Runs on port **8100**.
 - **Integration tests:** `src/integration/groovy` — Spock + Testcontainers (`mongo:7.0`), real
   WebFlux via `WebTestClient`. A **separate Maven source set** (run by `verify`, not by `mvn test`).
 
-## Documentation
-
-- **`CLAUDE.md`** — architecture, domain rules, and conventions (also the guide for AI agents).
-- **`info/`** — working docs: the feature plan (`statement_definiotion_user_edit.md`), the FE-facing
-  contract doc (`statement_definiotion_user_edit_fe_dev_info.md`), and dated `*_report.md` logs.
-- **`info/jtra/`** — task tickets.
-
-> Full project documentation is being moved to a MkDocs site (GitHub Pages) —
-> see `info/jtra/2026-001_add_mkdocs_for_app.md`.

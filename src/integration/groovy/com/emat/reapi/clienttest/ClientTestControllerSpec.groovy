@@ -8,6 +8,7 @@ import com.emat.reapi.statement.domain.StatementTypeDefinition
 import com.emat.reapi.statement.infra.StatementDefinitionDocument
 import com.emat.reapi.submission.domain.SubmissionStatus
 import com.emat.reapi.submission.infra.SubmissionDocument
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.springframework.http.MediaType
@@ -32,6 +33,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*
  *    WireMock stubs it to assert it was called without blocking the test on n8n availability.
  */
 class ClientTestControllerSpec extends BaseIntegrationSpec {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper()
 
     @Shared
     static WireMockServer wireMock = new WireMockServer(WireMockConfiguration.options().dynamicPort())
@@ -144,6 +147,55 @@ class ClientTestControllerSpec extends BaseIntegrationSpec {
 
         and: "n8n notified exactly once"
         wireMock.verify(1, postRequestedFor(urlEqualTo("/score-test/email")))
+    }
+
+    def "should send n8n the v2 computed-scoring payload, not raw answers (jira 2026-005)"() {
+        given:
+        stubN8nOk()
+        seedDefinition("profil_1", "p1_q1")
+        seedDefinition("profil_1", "p1_q2")
+        seedFpTest("fpt_n8n-shape", ["p1_q1", "p1_q2"])
+        seedSubmission("sub_n8n-shape", "fpt_n8n-shape", "pt_n8n-shape-token")
+
+        when:
+        webTestClient.post().uri("/api/client/test")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue([
+                        submissionId     : "sub_n8n-shape",
+                        publicToken      : "pt_n8n-shape-token",
+                        clientTestAnswers: [
+                                [statementKey: "p1_q1", scoring: 2],
+                                [statementKey: "p1_q2", scoring: -1]
+                        ]
+                ])
+                .exchange()
+                .expectStatus().isCreated()
+
+        then: "n8n received exactly one call, carrying the computed-scoring (v2) shape"
+        def sent = wireMock.findAll(postRequestedFor(urlEqualTo("/score-test/email")))
+        sent.size() == 1
+        def body = MAPPER.readValue(sent[0].bodyAsString, Map)
+
+        and: "envelope: recipient + identifiers, matching ClientScoreTestNotification"
+        body.clientEmail == "jan@example.com"
+        body.testSubmissionPublicId != null
+        body.submissionId == "sub_n8n-shape"
+        body.testId == "fpt_n8n-shape"
+
+        and: "overallSummary present (computed, not raw answers)"
+        body.overallSummary != null
+        body.overallSummary.totalAnswers == 2
+
+        and: "profiles[] grouped by profile, with computed label + per-statement severity"
+        body.profiles instanceof List
+        body.profiles.size() == 1
+        body.profiles[0].profileId == "profil_1"
+        body.profiles[0].computedLabel != null
+        body.profiles[0].answersBySeverity.size() == 2
+        body.profiles[0].answersBySeverity.every { it.statementKey && it.limitingDescription && it.supportingDescription }
+
+        and: "the old v1 raw-answers field is gone"
+        !body.containsKey("clientTestAnswerNotificationList")
     }
 
     def "should return 400 when publicToken does not match submission"() {

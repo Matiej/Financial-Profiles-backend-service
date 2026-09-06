@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.emat</groupId>
     <artifactId>reapi</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <name>profiler-service</name>
     <description>Profiler</description>
     <url/>
@@ -204,19 +204,24 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Groovy compilation -->
+            <!-- Groovy compilation.
+                 Unit specs (src/test/groovy) and integration specs (src/integration/groovy) both
+                 follow the Spock "*Spec" naming convention, so they can't be told apart by class
+                 name alone. Compiling them into two separate output directories lets surefire
+                 (unit, fast, no Docker) and failsafe (integration, Testcontainers) each pick up
+                 only their own classes via testClassesDirectory, instead of surefire silently
+                 running 0 tests because its default include pattern doesn't match "*Spec". -->
             <plugin>
                 <groupId>org.codehaus.gmavenplus</groupId>
                 <artifactId>gmavenplus-plugin</artifactId>
                 <version>${gmavenplus-plugin.version}</version>
                 <executions>
                     <execution>
+                        <id>compile-unit-tests</id>
                         <goals>
                             <goal>compileTests</goal>
                         </goals>
                         <configuration>
-                            <!-- Default is only src/test/groovy; the Spock specs live in
-                                 src/integration/groovy, so both roots must be declared. -->
                             <testSources>
                                 <testSource>
                                     <directory>${project.basedir}/src/test/groovy</directory>
@@ -224,6 +229,16 @@
                                         <include>**/*.groovy</include>
                                     </includes>
                                 </testSource>
+                            </testSources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>compile-integration-tests</id>
+                        <goals>
+                            <goal>compileTests</goal>
+                        </goals>
+                        <configuration>
+                            <testSources>
                                 <testSource>
                                     <directory>${project.basedir}/src/integration/groovy</directory>
                                     <includes>
@@ -231,6 +246,7 @@
                                     </includes>
                                 </testSource>
                             </testSources>
+                            <testOutputDirectory>${project.build.directory}/integration-test-classes</testOutputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -270,18 +286,26 @@
                 </executions>
             </plugin>
 
-            <!-- Unit tests - exclude integration -->
+            <!-- Unit tests only: testClassesDirectory defaults to target/test-classes, which now
+                 (see gmavenplus above) holds ONLY the compiled src/test/groovy specs. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <excludes>
-                        <exclude>**/integration/**</exclude>
-                    </excludes>
+                    <includes>
+                        <include>**/*Spec.java</include>
+                        <include>**/*Spec.groovy</include>
+                    </includes>
                 </configuration>
             </plugin>
 
-            <!-- Integration tests -->
+            <!-- Integration tests: separate compiled-classes directory (see gmavenplus above) so
+                 failsafe never picks up the unit specs and vice versa. Overriding
+                 testClassesDirectory replaces the classpath entry Maven would otherwise supply for
+                 it (the default ${project.build.testOutputDirectory}), so test resources compiled
+                 there (application-test.yml, logback-test.xml, ...) — copied by the standard
+                 testResources goal, which is untouched and still targets that default directory —
+                 must be added back explicitly or Spring can't find them at all. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -291,6 +315,10 @@
                         <include>**/*Spec.groovy</include>
                     </includes>
                     <testSourceDirectory>src/integration/groovy</testSourceDirectory>
+                    <testClassesDirectory>${project.build.directory}/integration-test-classes</testClassesDirectory>
+                    <additionalClasspathElements>
+                        <additionalClasspathElement>${project.build.testOutputDirectory}</additionalClasspathElement>
+                    </additionalClasspathElements>
                     <argLine>-XX:+EnableDynamicAgentLoading</argLine>
                 </configuration>
                 <executions>
